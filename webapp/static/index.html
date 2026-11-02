@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>티켓모아 상담 콘솔</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>티켓모아 상담 콘솔</h1>
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="tab-support" data-tab="support">상담</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tab-ops" data-tab="ops">운영</button>
+    </nav>
+    <div class="status" id="status" aria-live="polite"></div>
+  </header>
+
+  <main>
+    <section id="tab-support" role="tabpanel">
+      <div class="columns">
+        <form id="form" class="panel" novalidate>
+          <h2>요청</h2>
+
+          <label for="preset">시연 프리셋</label>
+          <select id="preset"><option value="">직접 입력</option></select>
+
+          <div class="row">
+            <div>
+              <label for="user">사용자</label>
+              <select id="user"></select>
+              <p class="hint" id="user-info"></p>
+            </div>
+            <div>
+              <label for="channel">채널</label>
+              <select id="channel">
+                <option>web</option><option>app</option><option>phone</option><option>kiosk</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="label-row">
+            <label for="question">질문</label>
+            <span class="hint" id="counter">0/500</span>
+          </div>
+          <textarea id="question" rows="5"></textarea>
+          <p class="warn" id="question-warn" hidden></p>
+
+          <div class="followup" id="followup" hidden>
+            <span id="followup-text"></span>
+            <button type="button" class="link" id="new-conversation">새 대화</button>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="request-id">request_id</label>
+              <input id="request-id" placeholder="비우면 자동 생성" autocomplete="off" maxlength="80">
+            </div>
+            <div>
+              <label for="attempt">attempt</label>
+              <input id="attempt" type="number" min="1" step="1" value="1">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="booking-id">booking_id</label>
+              <input id="booking-id" placeholder="T20261104-0412" autocomplete="off">
+            </div>
+            <div>
+              <label for="client-ip">client_ip</label>
+              <input id="client-ip" placeholder="선택" autocomplete="off">
+            </div>
+          </div>
+
+          <details id="extra-box">
+            <summary>추가 context (JSON)</summary>
+            <textarea id="extra-context" rows="3" spellcheck="false" placeholder='{"pending_action": "refund_request", "confirm": true}'></textarea>
+          </details>
+          <p class="warn" id="form-error" hidden></p>
+
+          <button type="submit" class="primary" id="send">보내기</button>
+        </form>
+
+        <div class="panel" id="result-panel">
+          <h2>결과</h2>
+          <div id="result"><p class="empty">아직 보낸 요청이 없습니다.</p></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>대화 이력</h2>
+        <div id="history"><p class="empty">아직 이력이 없습니다.</p></div>
+      </div>
+    </section>
+
+    <section id="tab-ops" role="tabpanel" hidden>
+      <div class="panel toolbar">
+        <div>
+          <label for="from">시작일</label>
+          <input id="from" type="date">
+        </div>
+        <div>
+          <label for="to">종료일</label>
+          <input id="to" type="date">
+        </div>
+        <button type="button" class="primary" id="ops-refresh">전체 새로고침</button>
+      </div>
+
+      <div class="ops-grid">
+        <div class="panel wide">
+          <h2>지표</h2>
+          <div id="ops-metrics"></div>
+        </div>
+        <div class="panel wide">
+          <h2>실행 기록</h2>
+          <div id="ops-logs"></div>
+        </div>
+        <div class="panel wide">
+          <h2>티켓</h2>
+          <div id="ops-tickets"></div>
+        </div>
+        <div class="panel wide">
+          <h2>알림</h2>
+          <div id="ops-alerts"></div>
+        </div>
+        <div class="panel wide">
+          <h2>DLQ</h2>
+          <div id="ops-dlq"></div>
+        </div>
+        <form class="panel" id="fault-form">
+          <h2>장애 주입</h2>
+          <div class="fault-grid" id="fault-fields"></div>
+          <label for="slow-seconds">slow_seconds</label>
+          <input id="slow-seconds" type="number" min="0" max="60" step="1">
+          <button type="submit" class="primary">저장</button>
+          <p class="hint" id="fault-message" aria-live="polite"></p>
+        </form>
+        <div class="panel">
+          <h2>초기화</h2>
+          <div class="reset-buttons" id="reset-buttons"></div>
+          <p class="hint" id="reset-message" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+all 27/29 (20261102-155107)
+PASS WF-01 정상 문의 #1 5.814s 
+PASS WF-02 정보 부족 #1 1.237s 
+PASS WF-02b 보완 질문 한도 #1 1.025s 
+FAIL WF-03 지식에 없음 #1 3.526s route = 자동 답변 (expected 담당자 이관) | sources = [{"doc": "payment-error-guide", "section": "1. 결제됐는데 예매 내역이  (expected []) | required ticket.id missing
+FAIL WF-04 티켓 API 장애 #1 4.36s route = 자동 답변 (expected 담당자 이관) | case dlq delta 0, expected 1 | case alerts delta 0, expected 1
+PASS WF-05 권한 없는 문서 #1 0.102s 
+PASS WF-06 남의 건 #1 0.294s 
+PASS WF-07 개인정보 #1 0.285s 
+PASS WF-08 주입 #1 0.095s 
+PASS WF-09 중복 요청 (1회째) #1 2.162s 
+PASS WF-09 중복 요청 (2회째, 같은 request_id) #1 0.095s 
+PASS WF-10 LLM 멈춤 #1 3.543s 
+PASS WF-11 느린 외부 API #1 5.264s 
+PASS WF-12 복합·긴급 #1 1.723s 
+PASS WF-13 잘못된 입력 · 빈 질문 #1 0.087s 
+PASS WF-13 잘못된 입력 · 없는 사용자 #1 0.072s 
+PASS WF-13 잘못된 입력 · 501자 #1 0.073s 
+PASS TM-01 우리 유형의 정상 · 앱 로그인 #1 4.365s 
+PASS TM-02 환불 2단계 · 1차 (금액 안내) #1 1.424s 
+PASS TM-03 환불 2단계 · 2차 (확인 후 티켓) #1 0.42s 
+PASS TM-04 지나치게 막지 않음 #1 1.527s 
+PASS TM-05 이중결제 + 부정 감정 #1 1.548s 
+PASS TM-06 경계 · 당일 취소 #1 1.538s 
+PASS TM-07 매크로 제한 문의 #1 4.126s 
+PASS TM-08 암표 신고 → 보안팀 이관 #1 1.412s 
+PASS TM-09 반복 요청 차단 (6번째 요청) #1 0.101s 
+PASS TM-10 해외 IP 차단 #1 0.091s 
+PASS TM-11 블랙리스트 IP 차단 #1 0.085s 
+PASS TM-12 국내 IP는 정상 처리 (과잉 차단 없음) #1 3.791s 

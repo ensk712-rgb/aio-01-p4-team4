@@ -25,7 +25,8 @@ n8n Code 노드는 기본 설정에서 로컬 파일을 불러올 수 없다. �
 | `backoffMs(attempt, retryAfter)` | 재시도 대기 시간 | handoff (심환석) | WF-04 |
 | `checkRateLimit(recent, now)` | 같은 사용자 60초 5회 초과면 차단 (매크로 대응, 가산) | support 앞단 (심환석) | TM-09 |
 | `checkIpPolicy(ip, policy)` | `context.client_ip`를 `config/ip-policy.json`으로 검사 (해외·블랙리스트, 가산) | support 앞단 (심환석) | TM-10~12 |
-| `buildLog(req, res, extra)` | `/logs` 기록 (질문 원문·연락처 없음) | support (최두나) | 결과서 |
+| `buildLog(req, res, extra)` | `/logs` 기록 (질문 원문·연락처 없음, channel 은 정규화) | support (최두나) | 결과서 |
+| `normalizeChannel(v)` / `CHANNELS` | channel 을 web·app·phone·kiosk·email·other 로 제한 (연락처 원문 기록 방지) | support, handoff (심환석) | WF-07 |
 
 ## Code 노드에서 쓰는 예
 

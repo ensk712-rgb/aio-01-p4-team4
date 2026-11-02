@@ -1,0 +1,204 @@
+{
+ "items": [
+  {
+   "defect": "WF-11: 조회 5초 + 티켓 5초로 6초 제한을 넘는다. 조회와 티켓은 같은 fault에 묶여 있다",
+   "by": "둘 다",
+   "scenario": "WF-11",
+   "fix": "절대 마감 시각을 하위로 전달. 상태 질문은 규칙으로 LLM 생략, 조회 2.5초, 빠른 마감 5.3초, 시간이 없으면 DLQ",
+   "check": "실행"
+  },
+  {
+   "defect": "WF-12: C-2002의 공연은 11/01이라 기록 날짜로는 긴급이 아니다",
+   "by": "둘 다",
+   "scenario": "WF-12",
+   "fix": "질문의 '10분 전'과 입장 문제를 규칙으로 판정. 기록의 공연이 임박해도 긴급으로 올림",
+   "check": "실행"
+  },
+  {
+   "defect": "WF-12: 긴급을 먼저 이관하면 대체 입장 안내와 조회가 사라진다",
+   "by": "Codex",
+   "scenario": "WF-12",
+   "fix": "긴급은 최종 경로 표시로만 쓰고 검색·조회·안내 후 high 티켓 1건",
+   "check": "실행"
+  },
+  {
+   "defect": "LLM 실패가 confidence 0이 되어 보완 질문으로 빠진다",
+   "by": "둘 다",
+   "scenario": "WF-10",
+   "fix": "error를 confidence보다 먼저 확인해 이관. 공연 직전은 LLM 없이도 대체 입장 안내",
+   "check": "실행"
+  },
+  {
+   "defect": "TM-03: booking_id로는 조회 API를 쓸 수 없다",
+   "by": "둘 다",
+   "scenario": "TM-03",
+   "fix": "1차에서 서버에 record_id를 저장하고 2차는 그 값으로 재조회",
+   "check": "실행"
+  },
+  {
+   "defect": "context.confirm=true 위조로 환불 티켓을 만들 수 있다",
+   "by": "둘 다",
+   "scenario": "TM-03, 반례",
+   "fix": "서버 대기 상태가 없으면 티켓 없음. 키에 검증된 user 포함",
+   "check": "실행"
+  },
+  {
+   "defect": "TM-06: 슬롯 검사가 먼저면 당일 취소가 보완 질문이 된다",
+   "by": "둘 다",
+   "scenario": "TM-06",
+   "fix": "당일 취소를 슬롯 검사보다 먼저 이관, refund-policy 근거 검색",
+   "check": "실행"
+  },
+  {
+   "defect": "사용자 단위 레이트 리밋이 --repeat 3에서 정상 시나리오를 막는다",
+   "by": "둘 다",
+   "scenario": "WF-06, 11, 12",
+   "fix": "같은 사용자+같은 질문 기준으로 계수. 재생과 규칙 차단은 세지 않음",
+   "check": "실행"
+  },
+  {
+   "defect": "/tickets-reset이 캐시를 지우지 않아 재시험 때 없는 티켓 번호가 나온다",
+   "by": "둘 다",
+   "scenario": "WF-09, TM-03",
+   "fix": "응답 재생은 60초만. 환불 확정 이력은 /tickets-created로 실재 확인",
+   "check": "실행"
+  },
+  {
+   "defect": "WF-05: 거절 문구에 '책임자 코드'를 되풀이해도 실패한다",
+   "by": "둘 다",
+   "scenario": "WF-05",
+   "fix": "LLM 전에 규칙으로 고정 문구 답. 작성 답변도 금지어 검사",
+   "check": "실행"
+  },
+  {
+   "defect": "데이터 API가 summary를 버리고 priority도 돌려주지 않는다",
+   "by": "Codex",
+   "scenario": "WF-12",
+   "fix": "요약을 title에 담고 응답에 priority·category를 붙여 정규화",
+   "check": "실행"
+  },
+  {
+   "defect": "하위 웹훅에 인증이 없으면 누구나 티켓을 만들 수 있다",
+   "by": "Claude",
+   "scenario": "반례",
+   "fix": "본체와 하위 웹훅 모두 Header Auth",
+   "check": "실행"
+  },
+  {
+   "defect": "WF-04를 반복하면 알림이 요청마다 쌓인다 (DLQ는 1건)",
+   "by": "Codex 판정기",
+   "scenario": "WF-04",
+   "fix": "요청당 장애 알림 이력을 캐시에 남겨 1건만 전송",
+   "check": "실행"
+  },
+  {
+   "defect": "32비트 지문 충돌로 다른 사용자의 기록과 티켓이 재생된다",
+   "by": "Codex 재현",
+   "scenario": "WF-09 반례",
+   "fix": "주인 이름을 그대로 비교하고 JSON 직렬화 SHA-256 지문 사용",
+   "check": "실행"
+  },
+  {
+   "defect": "request_id·channel의 연락처 원문이 로그와 티켓 key로 샌다",
+   "by": "Codex 재현",
+   "scenario": "WF-07 반례",
+   "fix": "request_id 형식 제한(400). channel은 승인 목록 밖이면 other",
+   "check": "실행"
+  },
+  {
+   "defect": "안내→확정→재안내→확정이면 환불 티켓이 2건 생긴다",
+   "by": "Codex 재현",
+   "scenario": "TM-03 반례",
+   "fix": "새 안내 저장 전에 확정 이력을 읽고 기존 티켓으로 답함",
+   "check": "실행"
+  },
+  {
+   "defect": "이미 환불 완료된 C-2003을 새 환불로 계산한다",
+   "by": "Codex 재현",
+   "scenario": "TM-02 반례",
+   "fix": "상태가 접수됨이 아니면 금액 없이 이관, 2차에도 재확인",
+   "check": "실행"
+  },
+  {
+   "defect": "티켓 실패에도 '접수됐고'라고 말한다",
+   "by": "Codex 재현",
+   "scenario": "WF-04, TM-03",
+   "fix": "티켓·대기열·호출 실패별로 실제 결과만 안내",
+   "check": "실행"
+  },
+  {
+   "defect": "느린 LLM에서 자식 실행이 부모 timeout 뒤에도 계속되고 호출 수가 틀린다",
+   "by": "Codex 재현",
+   "scenario": "WF-01",
+   "fix": "tech가 마감을 받아 시작 전·검증 전에 확인. llm_incomplete 표시",
+   "check": "실행"
+  },
+  {
+   "defect": "스태프 검색만 실패하면 오류가 사라진다",
+   "by": "Codex",
+   "scenario": "WF-05 대조군",
+   "fix": "staff_search_failed, staff_indexed 반환, 담당자 알림",
+   "check": "코드 확인"
+  },
+  {
+   "defect": "색인에서 권한 한쪽이 0개면 이전 내용이 남는다",
+   "by": "Codex",
+   "scenario": "WF-05",
+   "fix": "한쪽이 0개면 색인 중단, 임베딩 실패도 200 + ok:false",
+   "check": "코드 확인"
+  },
+  {
+   "defect": "Ops가 '오늘'이 아닌 전체를 세고 조회 실패를 0으로 보인다",
+   "by": "Codex",
+   "scenario": "가산",
+   "fix": "기본 기간 KST 오늘, 조회 실패는 null",
+   "check": "실행"
+  },
+  {
+   "defect": "주인 기록이 사라진 뒤 다른 사용자가 같은 request_id로 남의 티켓 번호를 받는다",
+   "by": "Codex 재현",
+   "scenario": "WF-09 반례",
+   "fix": "duplicate면 /tickets-created로 key·번호·신청자를 대조. 남의 티켓이면 번호를 주지 않고 주인 기록을 복구",
+   "check": "실행"
+  },
+  {
+   "defect": "재시험에서 재사용된 티켓 번호를 기존 환불로 오판한다",
+   "by": "Codex 재현",
+   "scenario": "TM-03 반례",
+   "fix": "확정 이력 확인에서 번호·key·신청자를 함께 비교",
+   "check": "실행"
+  },
+  {
+   "defect": "알림이 HTTP 500이어도 성공 이력이 남아 복구 뒤에도 안 나간다",
+   "by": "Codex",
+   "scenario": "WF-04, WF-12",
+   "fix": "상태 코드 2xx일 때만 이력 저장. 알림 500 주입은 키트에 스위치가 없어 조건식만 확인",
+   "check": "코드 확인"
+  },
+  {
+   "defect": "짝이 맞지 않는 유니코드 질문이 해시 계산에서 HTTP 500이 된다",
+   "by": "Codex 재현",
+   "scenario": "WF-13 반례",
+   "fix": "입력 검사에서 400 invalid_encoding. 예매번호 형식 검사",
+   "check": "실행"
+  },
+  {
+   "defect": "Ops가 KST 자정~09시 기록을 빼고, 잘못된 날짜에 500이 된다",
+   "by": "Codex 재현",
+   "scenario": "가산",
+   "fix": "하루 넓게 읽어 한국 날짜로 재필터, 달력 날짜 검사",
+   "check": "실행"
+  }
+ ],
+ "open": [
+  "실제 LLM 실측: OpenAI 키가 있는 환경에서 공통·팀 시나리오를 돌려 분류 정확도, WF-03 판정, WF-01의 8초를 잽니다. 지금까지는 mock입니다.",
+  "SCORE_MIN 0.35는 임시값입니다. RAG 담당(정예진)이 WF-01·WF-03 점수 분포로 확정해야 합니다. 값이 틀리면 WF-03이 실패합니다.",
+  "80일차 키트 대조: 과정 flow.py의 Credential 검사(77일차판은 openAiCourse0001만 허용해 이 초안은 Credential 항목에서 오류), X-Team-Key 전송, llm down 훈련이 고장 내는 Credential, cases/common.json 판정 칸. 데이터 API 주소는 컨테이너 기준 data-api:8800으로 썼습니다 (AGENTS는 localhost:8800).",
+  "시험 담당(김인혜): TM-09는 cases/team.json에 선행 요청이 없어 파일 그대로는 통과하지 못합니다. 검증 러너는 같은 질문 5회를 먼저 보냅니다. 재시험 전에 /cache-clear를 before에 넣는 것도 권합니다. TM-03은 TM-02 뒤에서만 통과합니다.",
+  "리드 결정(최두나): 400 코드 request_id_conflict, invalid_request_id, invalid_encoding 추가. channel 승인 목록. agents를 객체로 고정. 레이트 리밋 기준을 사용자+같은 질문으로 변경(질문을 바꾸는 매크로는 못 막음). 8초와 접수 보장이 충돌할 때 접수를 택함: LLM이 예산을 다 쓰고 티켓 API까지 느리면 8초를 넘을 수 있습니다.",
+  "공통 함수: sha256, readHttp, parseBooking은 lib/common.js에 없어 생성기에서 넣었습니다. AGENTS 5절에 맞추려면 lib로 옮기고 테스트를 추가해야 합니다. buildLog의 retries처럼 호출 수는 Agent 시도 기준이며 SDK 내부 재시도는 세지 못합니다.",
+  "현 API로 막을 수 없는 것: 같은 예매의 동시 확정(티켓 2건 가능), 티켓 생성과 확정 저장의 원자성, timeout 뒤 늦게 생기는 티켓과 DLQ의 공존(같은 key로 수습), 하루가 지난 주인 기록. 재시작하면 In-Memory 색인이 비므로 index를 다시 실행해야 합니다. records의 status는 상담 상태라 접수됨 외에는 보수적으로 이관합니다.",
+  "미구현: onsite-entry-fallback 5절의 '같은 공연 10분 3건' 게이트 장애 알림, 실제 취소 API, 웹 위젯. attempt는 호출자 값을 믿습니다. 새 업무 추가는 레지스트리 항목만으로 되지 않고 라우팅 계획 수정이 필요합니다 (기획서의 '코드 수정 없이' 데모와 다릅니다).",
+  "반영 절차: AGENTS 4절에 따라 다른 담당자 파일(workflows/)에 넣지 않고 drafts/n8n/에 두었으며 커밋하지 않았습니다. 또한 노드를 생성기로 만들었습니다. 타입·버전·파라미터 모양은 reference에서 가져왔지만 파일을 복사해 고치라는 AGENTS 5절의 방식과는 다릅니다."
+ ]
+}

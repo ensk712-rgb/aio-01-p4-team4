@@ -15,6 +15,7 @@ aio-01-p4-team4/
 ├── AGENTS.md              # 코딩 에이전트 규칙 (모두 먼저 읽기)
 ├── CLAUDE.md              # @AGENTS.md
 ├── docs/
+│   ├── MVP.md             # MVP 범위·서버 상태·남은 위험 (먼저 읽기)
 │   ├── TOPIC.md           # 주제 제안서
 │   ├── PLAN.md            # 기획서 (images/architecture.png)
 │   ├── IMPLEMENTATION-PLAN.md  # 구현 순서·역할·하위 웹훅 계약
@@ -35,7 +36,8 @@ aio-01-p4-team4/
 │   ├── ticketmoa-tech.json      정예진
 │   ├── ticketmoa-payment.json   심환석
 │   ├── ticketmoa-handoff.json   심환석
-│   └── ticketmoa-errors.json    심환석
+│   ├── ticketmoa-errors.json    심환석
+│   └── ticketmoa-ops.json       심환석 (가산, 필수 통과 뒤에만)
 ├── lib/
 │   ├── common.js          # 공통 함수 원본 (Code 노드에 복사해서 씀)
 │   ├── README.md          # 함수 목록·누가 어디서 쓰나
@@ -46,8 +48,24 @@ aio-01-p4-team4/
 ├── data/                  # users.json 5명, records.json 5건 (가짜 데이터)
 ├── cases/                 # common.json(공통 14유형), team.json(팀 12개, TM-09~12는 가산)
 ├── requests/              # 시연·bench용 요청 파일
-└── runs/                  # flow.py test·bench 보고서 (결과서 증거)
+├── runs/                  # 시나리오 보고서 (결과서 증거)
+├── webapp/                # 시연 웹앱 (상담 콘솔 + 운영), Python 표준 라이브러리만
+├── deploy/                # 서버 배포 스크립트 (push → setup → doctor → run-cases)
+├── drafts/n8n/            # 워크플로우 생성기(build.mjs)·격리 검증 하네스(verify/)·검토 기록
+└── tools/                 # flow.py·데이터 API (저장소에 없음, 과정 키트에서 서버로 복사)
 ```
+
+## 빠른 시작 (MVP)
+
+```powershell
+copy .env.example .env                                   # OPENAI_API_KEY 채우기
+powershell -ExecutionPolicy Bypass -File deploy\push.ps1 -Setup
+ssh -L 8080:localhost:8080 aio-t4                        # 그대로 둔 채
+```
+
+브라우저에서 http://localhost:8080 → 상담 탭에서 프리셋을 골라 보내고, 운영 탭에서 티켓·알림·DLQ·지표를 본다. 자세한 것은 `docs/MVP.md`, `deploy/README.md`, `webapp/README.md`.
+
+워크플로우 JSON 은 `drafts/n8n/build.mjs`가 만든다. 고칠 때는 생성기를 고치고 `node drafts/n8n/build.mjs` → `drafts/n8n/verify/up.sh` → `python3 -B drafts/n8n/verify/runner.py --suite all --repeat 2` → `down.sh`.
 
 ## 처음 받은 사람
 
@@ -66,10 +84,11 @@ ssh -o BatchMode=yes aio-t4 "whoami"   # toor가 나오면 서버 접속 준비 
 **2. 서버에 반영하고 실행**
 
 ```powershell
-scp -r workflows knowledge data cases config lib requests aio-t4:~/aio-01-p4-team4/
-ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/*.json'"
+scp workflows/<내 파일>.json aio-t4:~/aio-01-p4-team4/workflows/
+ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/<내 파일>.json'"
 ```
 
+- `tools/flow.py`와 데이터 API는 과정 키트(`Last3Mon/80`, 그 전에는 `Last3Mon/73`)에 있고 저장소에는 없다. 서버에 없으면 위 명령이 실패하므로 리드가 키트에서 먼저 옮긴다.
 - 서버 명령은 꼭 `bash -lc`로 감싼다 (없으면 `uv`를 못 찾는다). PowerShell에서 명령 안에 `$`가 있으면 `` `$ ``로 쓴다.
 - 오래 걸리는 시험은 서버 `tmux` 세션에서 돌린다. 서버 RAM이 2.6GB라 n8n과 같이 쓰므로 무거운 작업 전에 `free -h`를 본다.
 - 서버에서 파일을 직접 고치지 않는다. 다음 `scp` 때 로컬 파일로 덮어써진다.
@@ -97,10 +116,12 @@ GitHub에서 `main`으로 PR을 열면 리드가 검토하고 병합한다. 병�
 
 ## 시험
 
+서버의 `~/aio-01-p4-team4`에서 실행한다. `tools/flow.py`(80일차 키트)가 서버에 생기면 그쪽 명령으로 바꾼다.
+
 ```bash
-uv run tools/flow.py push workflows/*.json
-uv run tools/flow.py test cases/common.json --webhook ticketmoa-support -v
-uv run tools/flow.py test cases/team.json -v
+bash deploy/server/setup.sh                                   # import·publish·색인
+python3 deploy/server/run-cases.py --suite all --repeat 1 -v  # common 17 + team 12 → runs/
+bash deploy/server/doctor.sh                                  # 상태 점검
 ```
 
 ## 시연 순서 (발표)

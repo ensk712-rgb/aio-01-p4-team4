@@ -23,7 +23,7 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 잘못된 입력(빈 질문·없는 사용자·501자 이상): HTTP 400 {"error":"invalid request","codes":[...]}
 ```
 
-하위 웹훅끼리 주고받는 모양은 `docs/WORKFLOW-DESIGN.md` 3절의 표를 따른다. 하위 웹훅은 실패해도 HTTP 200 + `{"error": "..."}`로 돌려준다.
+하위 웹훅끼리 주고받는 모양은 `docs/WORKFLOW-DESIGN.md` 3절의 표를 따른다 (이 문서를 쓰기 전에는 `docs/IMPLEMENTATION-PLAN.md` 1단계의 표). 하위 웹훅은 실패해도 HTTP 200 + `{"error": "..."}`로 돌려준다.
 
 ## 4. 파일 담당 (한 사람 = 한 파일)
 
@@ -40,7 +40,7 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 
 ## 5. n8n 워크플로우를 만들 때
 
-- **처음부터 JSON을 새로 쓰지 않는다.** 과정 실습의 정답 워크플로우(`~/aio-01d4-stu/Last3Mon/<일차>/reference/*.json`)를 복사해 이름·경로·노드를 고친다. 노드 `type`·`typeVersion`은 reference에 있는 것만 쓴다.
+- **처음부터 JSON을 새로 쓰지 않는다.** 과정 실습의 정답 워크플로우(`~/aio-01d4-stu/Last3Mon/<일차>/reference/*.json`, 서버에는 없고 각자의 실습 폴더에 있다)를 복사해 이름·경로·노드를 고친다. 노드 `type`·`typeVersion`은 reference에 있는 것만 쓴다.
 - 워크플로우 이름과 웹훅 경로는 `ticketmoa-`로 시작한다.
 - 하위 워크플로우는 Execute Workflow가 아니라 **HTTP Request로 웹훅을 부른다** (팀원마다 n8n 워크플로우 ID가 다르다). HTTP Request에는 timeout(5초)과 오류 출력을 둔다.
 - 규칙으로 정할 수 있는 것(길이, 권한, 중복, 점수 기준, 금액 한도, attempt 횟수)은 Code·If·Switch로 한다. LLM은 분류·답변·검증에만 쓴다.
@@ -69,7 +69,7 @@ ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflo
 git commit -m "<무엇> · common N/14"
 ```
 
-`flow.py` 하위 명령 이름은 80일차 키트 README를 따른다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
+`tools/flow.py`와 데이터 API는 과정 키트(`Last3Mon/80`, 그 전에는 `Last3Mon/73`)에 있고 저장소에는 없다. 서버에 없으면 `flow.py` 명령이 실패하므로 리드에게 알린다. `flow.py` 하위 명령 이름은 80일차 키트 README를 따른다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
 
 ## 8. 로컬과 서버
 

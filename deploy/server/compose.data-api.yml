@@ -1,0 +1,28 @@
+# 연습용 데이터 API (과정 키트 77일차 server.py)를 서버 n8n 네트워크에 붙인다.
+#   cd ~/aio-01-p4-team4 && docker compose -p ticketmoa-data -f deploy/server/compose.data-api.yml up -d
+#   n8n 컨테이너에서: http://data-api:8800   호스트에서: http://localhost:8800
+# server.py 와 data/ 는 저장소에 없다. deploy/push.sh 가 키트에서 tools/data-api/ 로 복사한다.
+name: ticketmoa-data
+
+services:
+  data-api:
+    image: python:3.12-slim
+    command: python /app/server.py
+    environment:
+      - DATA_DIR=/data
+      - PYTHONUNBUFFERED=1
+      - TZ=KST-9
+    ports:
+      - "127.0.0.1:8800:8800"
+    volumes:
+      - ../../tools/data-api/server.py:/app/server.py:ro
+      - ../../tools/data-api/data:/data:ro
+    networks:
+      n8n:
+        aliases: [data-api]
+    restart: unless-stopped
+
+networks:
+  n8n:
+    external: true
+    name: day65-n8n_default

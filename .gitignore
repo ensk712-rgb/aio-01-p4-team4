@@ -2,3 +2,7 @@
 *.key
 node_modules/
 .DS_Store
+/tools/
+drafts/n8n/verify/reports/
+drafts/n8n/verify/runtime-data/
+runs/*.log

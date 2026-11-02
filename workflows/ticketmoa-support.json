@@ -1,0 +1,2714 @@
+{
+  "id": "ticketmoaSupport1",
+  "name": "ticketmoa-support",
+  "nodes": [
+    {
+      "id": "0bf4b5c8-b3b8-14ac-b0d0-262bc789237e",
+      "name": "문의 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticketmoa-support",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "【역할】 모든 문의가 들어오는 하나의 입구다.\n【입력】 POST /webhook/ticketmoa-support, X-Team-Key 헤더. {request_id, user, channel, question, attempt, context}.\n【처리】 Header Auth로 키를 확인한다. 응답은 노드 흐름의 끝에서 보낸다.\n【출력】 {headers, body}.\n【실패 시】 키가 틀리면 n8n이 거부하고 어떤 노드도 실행되지 않는다.",
+      "notesInFlow": false,
+      "webhookId": "e5603061-7003-df22-4372-93c73b1bd655",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "72930544-b8b1-fffe-e599-e2129569b1da",
+      "name": "요청 시각 기록",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst raw = $input.first().json.body;\nconst body = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};\nconst context = body.context && typeof body.context === 'object' && !Array.isArray(body.context) ? body.context : {};\nconst now = Date.now();\nreturn [{ json: { body, context, started_ms: now, deadline_ms: now + 7500, hard_deadline_ms: now + 5300 } }];"
+      },
+      "notes": "【역할】 시간 예산을 시작하고 입력 모양을 정리한다.\n【입력】 {body}.\n【처리】 일반 마감은 7.5초(WF-01은 8초 제한), 데이터 API 장애 때 쓰는 빠른 마감은 5.3초(WF-11은 6초 제한)다. 절대 시각을 하위에 전달해 호출 timeout과 LLM 시작 여부를 정한다. 이것은 목표이지 실행 시간의 상한은 아니다: 이미 시작한 LLM은 끝나기를 기다리고, 부모가 timeout된 뒤에도 하위 실행은 계속될 수 있다.\n【출력】 {body, context, started_ms, deadline_ms, hard_deadline_ms}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "649560fa-55b0-1547-a46f-3a64ecce23fe",
+      "name": "사용자 목록 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/employees",
+        "options": {
+          "timeout": 2000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 등록 사용자와 access_level을 읽는다.\n【입력】 없음.\n【처리】 GET /employees. 권한 판단의 유일한 근거이며 질문 글을 믿지 않는다.\n【출력】 {statusCode, body:{employees:[{name, dept, grade, access_level}]}}.\n【실패 시】 읽지 못하면 모든 사용자가 \"없는 사용자\"로 오판되지 않도록 입력 검사가 별도 상태로 처리한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "30a06926-c132-0621-4935-81069fc6ab76",
+      "name": "입력 검사",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nconst MAX_QUESTION_LENGTH = 500;\nfunction validateRequest(body, users) {\n  const codes = [];\n  const b = body || {};\n  if (!b.request_id || typeof b.request_id !== 'string') codes.push('missing_request_id');\n  const q = typeof b.question === 'string' ? b.question.trim() : '';\n  if (!q) codes.push('empty_question');\n  if (typeof b.question === 'string' && b.question.length > MAX_QUESTION_LENGTH) codes.push('question_too_long');\n  const user = (users || []).find(u => u.name === b.user) || null;\n  if (!b.user) codes.push('missing_user');\n  else if (!user) codes.push('unknown_user');\n  if (b.attempt !== undefined && !(Number.isInteger(b.attempt) && b.attempt >= 1)) codes.push('invalid_attempt');\n  return { ok: codes.length === 0, codes, user };\n}\nfunction badRequest(codes) {\n  return { error: 'invalid request', codes: codes || [] };\n}\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nconst CHANNELS = ['web', 'app', 'phone', 'kiosk', 'email', 'other'];\nfunction normalizeChannel(channel) {\n  return typeof channel === 'string' && CHANNELS.includes(channel) ? channel : 'other';\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst s = $('요청 시각 기록').first().json;\nconst r = readHttp($json);\nconst users = r.ok && Array.isArray(r.body.employees) ? r.body.employees : null;\nif (!users) return [{ json: { ...s, stage: 'users_unavailable' } }];\nconst v = validateRequest(s.body, users);\nconst codes = [...v.codes];\nconst rid = s.body.request_id;\n// request_id는 식별자다. 연락처를 담으면 티켓 key·로그·DLQ로 퍼지므로 받지 않는다.\nif (typeof rid === 'string' && (!/^[A-Za-z0-9._:-]{1,80}$/.test(rid) || maskPII(rid).masked > 0)) codes.push('invalid_request_id');\nif (typeof s.body.question === 'string' && /[\\ud800-\\udbff](?![\\udc00-\\udfff])|(?<![\\ud800-\\udbff])[\\udc00-\\udfff]/.test(s.body.question)) codes.push('invalid_encoding');\nif (codes.length) return [{ json: { ...s, stage: 'invalid', http400: badRequest(codes), codes } }];\nconst channel = normalizeChannel(s.body.channel);\nreturn [{ json: { ...s, stage: 'ok', request_id: rid, user: v.user.name, access_level: v.user.access_level === 'staff' ? 'staff' : 'all', channel, question: s.body.question, attempt: s.body.attempt || 1 } }];"
+      },
+      "notes": "【역할】 LLM 전에 형식을 검사한다 (WF-13).\n【입력】 사용자 목록 조회 응답, 요청 시각 기록.\n【처리】 validateRequest를 그대로 쓴다: 빈 질문, 없는 사용자, 501자 이상, attempt 형식. 여기에 request_id 형식 검사를 더한다(영문·숫자·._:- 80자, 연락처 금지). channel은 승인된 값(web, app, phone, kiosk, email, other)만 그대로 두고 그 밖에는 other로 바꾼다 (자유 문자열이면 연락처가 로그에 남을 수 있다). 바꾼 값은 가린 것이 아니라 버린 것이어서 security.masked에 세지 않는다. 짝이 맞지 않는 유니코드 문자가 든 질문은 해시 계산이 실패하므로 400으로 거절한다. 사용자 목록을 못 읽은 경우는 입력 오류와 구분한다.\n【출력】 {stage:\"ok\", request_id, user, access_level, channel, question, attempt} 또는 {stage:\"invalid\", http400} 또는 {stage:\"users_unavailable\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "8acd559c-8ed4-f3ca-94f0-0ea50be639e6",
+      "name": "입력 판정",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "rightValue": "ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "invalid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "rightValue": "users_unavailable",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "users_unavailable"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 입력 검사 결과로 길을 나눈다.\n【입력】 stage.\n【출력】 ok: 규칙 차단. invalid: 400 응답. users_unavailable 또는 예상 밖: 정해진 이관 응답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "178c8138-ce2d-f073-1367-a4ba6ed2cf6c",
+      "name": "400 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1500,
+        -150
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.http400 }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "notes": "【역할】 잘못된 입력에 공통 계약의 400을 돌려준다.\n【입력】 {http400:{error:\"invalid request\", codes}}.\n【출력】 HTTP 400 {\"error\":\"invalid request\",\"codes\":[...]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "0b1c7503-cfcf-ad0e-c723-7c34f20c0bd4",
+      "name": "400 기록 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3600,
+        -150
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nconst CHANNELS = ['web', 'app', 'phone', 'kiosk', 'email', 'other'];\nfunction normalizeChannel(channel) {\n  return typeof channel === 'string' && CHANNELS.includes(channel) ? channel : 'other';\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst j = $('입력 검사').first().json;\nconst codes = ($json.http400 && $json.http400.codes) || j.codes || [];\nconst channel = normalizeChannel(j.body.channel);\nconst request_id = maskPII(String(j.body.request_id || '')).text.slice(0, 80);\nreturn [{ json: { items: [{ request_id, channel, attempt: 0, route: 'invalid', intents: [], sources: [], top_scores: [], ticket: null, retries: 0, blocked_by: '', masked: 0, llm_calls: 0, codes, timings: { total_ms: Date.now() - j.started_ms }, started_at: new Date(j.started_ms).toISOString(), finished_at: new Date().toISOString() }] } }];"
+      },
+      "notes": "【역할】 잘못된 입력도 집계할 수 있게 기록을 만든다.\n【입력】 400 응답을 보낸 항목(입력 오류 또는 request_id 충돌), 입력 검사 결과.\n【처리】 질문 원문은 넣지 않는다. request_id는 고객이 넣는 값이라 가리고, channel은 승인 값이 아니면 other로 쓴다.\n【출력】 {items:[...]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "7053ee4c-80c1-20ea-8f5f-1c97e5d4f046",
+      "name": "사용자 조회 실패 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nreturn [{ json: { route: '담당자 이관', answer: '일시적인 시스템 문제로 문의 내용을 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.', sources: [], ticket: null, reason: 'users_unavailable', roles: [], masked: 0 } }];"
+      },
+      "notes": "【역할】 사용자 목록을 읽지 못했을 때의 정해진 답이다.\n【입력】 입력 판정.\n【처리】 어떤 사용자인지 확인하지 못했으니 티켓도 만들지 않는다. 500 대신 200으로 답한다.\n【출력】 응답 조립에 넘길 값.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a87a07c7-5202-b4d5-eb4d-629f280e1cbb",
+      "name": "규칙 차단 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        150
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nconst INJECTION_PATTERNS = [\n  /(이전|위|앞)의?\\s*(모든\\s*)?(지시|명령|규칙|프롬프트)(는|을|를)?\\s*(모두\\s*)?(무시|잊)/,\n  /시스템\\s*프롬프트/,\n  /(개발자|관리자|디버그)\\s*모드/,\n  /너는\\s*이제\\s*(부터)?/,\n  /ignore\\s+(all\\s+)?(previous|prior|above)\\s+(instructions|prompts?)/i,\n  /system\\s+prompt/i,\n  /(수수료|환불|결제).{0,10}(0원|무료)으로\\s*(처리|해)/,\n];\nfunction detectInjection(text) {\n  const t = String(text || '');\n  for (const p of INJECTION_PATTERNS) {\n    if (p.test(t)) return { blocked: true, blocked_by: 'rule', reason: 'injection_pattern' };\n  }\n  return { blocked: false, blocked_by: '', reason: '' };\n}\nfunction checkIpPolicy(ip, policy) {\n  const p = policy || {};\n  if (!ip) return { blocked: false, blocked_by: '', reason: '', country: '' };\n  if ((p.blocklist || []).includes(ip)) {\n    return { blocked: true, blocked_by: 'ip_blocklist', reason: (p.blocklist_reason || {})[ip] || 'blocklisted', country: '' };\n  }\n  const hit = (p.geo || []).find(g => ip.startsWith(g.prefix));\n  const country = hit ? hit.country : 'UNKNOWN';\n  if (!(p.allowed_countries || []).includes(country)) {\n    return { blocked: true, blocked_by: 'geo', reason: 'country_not_allowed', country };\n  }\n  return { blocked: false, blocked_by: '', reason: '', country };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst IP_POLICY = {\"geo\":[{\"prefix\":\"203.0.113.\",\"country\":\"KR\"},{\"prefix\":\"198.51.100.\",\"country\":\"US\"},{\"prefix\":\"192.0.2.\",\"country\":\"CN\"}],\"allowed_countries\":[\"KR\"],\"blocklist\":[\"203.0.113.66\",\"203.0.113.99\"],\"blocklist_reason\":{\"203.0.113.66\":\"macro_detected\",\"203.0.113.99\":\"scalping_reported\"}};\nconst STAFF_ASK = /스태프.{0,20}(절차|매뉴얼|처리|방법)|책임자\\s*코드|수기\\s*(모드|입장)/;\nconst j = $json;\nconst ip = checkIpPolicy(typeof j.context.client_ip === 'string' ? j.context.client_ip : '', IP_POLICY);\nif (ip.blocked) {\n  const answer = ip.blocked_by === 'geo'\n    ? '현재 지역에서는 예매할 수 없습니다. 해외 체류 중인 회원은 마이페이지의 해외 예매 인증에서 본인인증을 마치면 예매할 수 있습니다 (공연마다 허용 여부가 다릅니다). VPN이나 프록시로 접속 지역을 바꾸면 예매가 제한될 수 있습니다.'\n    : '보안 정책에 따라 이 접속 환경에서는 요청을 처리할 수 없습니다. 고객센터로 문의해 주세요.';\n  return [{ json: { ...j, gate: 'stop', route: '차단', answer, blocked_by: ip.blocked_by, sec_reason: ip.reason, reason: ip.reason } }];\n}\nconst inj = detectInjection(j.question);\nif (inj.blocked) {\n  return [{ json: { ...j, gate: 'stop', route: '차단', answer: '보안 정책상 처리할 수 없는 요청입니다. 필요한 내용을 다시 적어 문의해 주세요.', blocked_by: inj.blocked_by, sec_reason: inj.reason, reason: inj.reason } }];\n}\nif (j.access_level !== 'staff' && STAFF_ASK.test(j.question)) {\n  return [{ json: { ...j, gate: 'stop', route: '권한 없음', answer: '현장 운영 전용 절차는 안내할 수 없습니다. 입장에 문제가 있으면 공연장 1층 현장 발권 창구에서 도움을 받을 수 있습니다.', blocked_by: '', sec_reason: '', reason: 'staff_only_request' } }];\n}\nreturn [{ json: { ...j, gate: 'pass' } }];"
+      },
+      "notes": "【역할】 LLM을 부르기 전에 규칙으로 막을 것을 막는다.\n【입력】 입력 검사 결과.\n【처리】 가상 IP 정책(TM-10, 11), 주입 문구(WF-08), 일반 고객의 스태프 절차 요청(WF-05)을 차례로 본다. 고정 문구로 답해 금지어가 답에 들어가지 않는다. client_ip가 없으면 통과한다 (TM-12).\n【출력】 {gate:\"stop\", route, answer, blocked_by, ...} 또는 {gate:\"pass\", ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a6042243-cac9-78cc-7f94-dc7263fb1f3b",
+      "name": "규칙 통과?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1800,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.gate === 'pass' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 규칙 차단 결과로 길을 나눈다.\n【입력】 gate.\n【출력】 참: 중복 기록 조회(이어서 티켓 주인 조회). 거짓: 규칙 차단 답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "2fda605b-26d4-8f3e-d2e8-b6ac778bc3f3",
+      "name": "규칙 차단 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $json;\nreturn [{ json: { route: j.route, answer: j.answer, sources: [], ticket: null, reason: j.reason, blocked_by: j.blocked_by, sec_reason: j.sec_reason, roles: ['guard'], masked: 0 } }];"
+      },
+      "notes": "【역할】 차단 결과를 응답 조립 모양으로 맞춘다.\n【입력】 규칙 차단 판정 결과.\n【처리】 LLM을 부르지 않았으므로 llm_calls는 0이다 (WF-08).\n【출력】 {route, answer, sources:[], ticket:null, reason, blocked_by, sec_reason}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "9440b5b9-6d6d-5995-ff6a-9bf609373245",
+      "name": "중복 기록 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2100,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ encodeURIComponent('req:' + $json.request_id) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 같은 request_id가 이미 왔는지 확인한다.\n【입력】 request_id.\n【처리】 GET /cache/req:<id>.\n【출력】 {statusCode, body:{value:{fp, response, replay_until}}}. 없으면 404.\n【실패 시】 캐시를 못 읽으면 새 요청으로 진행한다. 티켓은 POST /tickets의 key로 여전히 1건만 생긴다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "928994ae-dfa2-5627-541f-c5548c890dd1",
+      "name": "티켓 주인 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/tickets-created",
+        "options": {
+          "timeout": 800,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이 request_id로 만들어진 티켓의 실제 주인을 읽는다.\n【입력】 없음.\n【처리】 GET /tickets-created. 캐시의 주인 기록은 사라지거나 덮어써질 수 있지만 티켓은 그대로 남는다. 그래서 주인을 확정하기 전에 티켓을 먼저 본다.\n【출력】 {statusCode, body:{tickets}}.\n【실패 시】 읽지 못하면 캐시 기록으로만 판단한다. 번호 노출은 ticketmoa-handoff의 주인 확인이 한 번 더 막는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "2746f7c6-e560-7377-226e-3fe707ab8f4c",
+      "name": "중복 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nfunction sha256(text) {\n  const bytes = Array.from(encodeURIComponent(text).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))).map(c => c.charCodeAt(0));\n  const K = []; const H = []; let n = 0;\n  const frac = x => Math.floor((x - Math.floor(x)) * 4294967296);\n  for (let p = 2; n < 64; p++) {\n    let prime = true;\n    for (let i = 2; i * i <= p; i++) if (p % i === 0) { prime = false; break; }\n    if (prime) { if (n < 8) H[n] = frac(Math.sqrt(p)); K[n++] = frac(Math.cbrt(p)); }\n  }\n  const bitLen = bytes.length * 8;\n  bytes.push(0x80);\n  while (bytes.length % 64 !== 56) bytes.push(0);\n  for (let i = 0; i < 4; i++) bytes.push(0);\n  for (let i = 3; i >= 0; i--) bytes.push((bitLen >>> (i * 8)) & 255);\n  const rotr = (x, r) => (x >>> r) | (x << (32 - r));\n  for (let off = 0; off < bytes.length; off += 64) {\n    const w = [];\n    for (let i = 0; i < 16; i++) w[i] = ((bytes[off + i * 4] << 24) | (bytes[off + i * 4 + 1] << 16) | (bytes[off + i * 4 + 2] << 8) | bytes[off + i * 4 + 3]) | 0;\n    for (let i = 16; i < 64; i++) {\n      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);\n      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);\n      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;\n    }\n    let [a, b, c, d, e, f, g, h] = H;\n    for (let i = 0; i < 64; i++) {\n      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;\n      const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;\n      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;\n    }\n    [a, b, c, d, e, f, g, h].forEach((v, i) => { H[i] = (H[i] + v) >>> 0; });\n  }\n  return H.map(v => (v >>> 0).toString(16).padStart(8, '0')).join('');\n}\n\nconst j = $('규칙 차단 판정').first().json;\nconst cacheOut = $('중복 기록 조회').all(0);\nconst r = cacheOut.length ? readHttp(cacheOut[0].json) : readHttp(null);\nconst ticketsR = readHttp($json);\nconst row = (ticketsR.ok && Array.isArray(ticketsR.body.tickets) ? ticketsR.body.tickets : []).find(t => t.key === j.request_id);\nconst ticketOwner = row ? row.requester : null;\nconst fp = sha256(JSON.stringify([j.question, j.attempt, j.context.pending_action ?? null, j.context.confirm ?? null, j.context.booking_id ?? null]));\nconst q_hash = sha256(String(j.question).replace(/\\s+/g, ' ').trim()).slice(0, 24);\nconst rec = r.ok && r.body.value && typeof r.body.value === 'object' ? r.body.value : null;\nconst conflict = [{ json: { ...j, fp, q_hash, dup: 'conflict', http400: { error: 'invalid request', codes: ['request_id_conflict'] } } }];\n// 티켓 주인이 있으면 캐시보다 우선한다: 남은 거절하고, 캐시를 잘못 차지당한 진짜 주인은 다시 받아 준다.\nif (ticketOwner && ticketOwner !== j.user) return conflict;\nconst recMine = rec && rec.owner === j.user;\nif (rec && !recMine && ticketOwner !== j.user) return conflict;\nif (recMine && rec.fp !== null && rec.fp !== fp) return conflict;\nif (recMine && rec.response && rec.replay_until > Date.now()) return [{ json: { ...j, fp, q_hash, dup: 'replay', cached: rec.response } }];\nreturn [{ json: { ...j, fp, q_hash, dup: 'new' } }];"
+      },
+      "notes": "【역할】 같은 요청인지, 다른 요청이 번호를 재사용했는지 가른다.\n【입력】 중복 기록 조회 응답, 티켓 주인 조회 응답.\n【처리】 티켓 주인이 다른 사용자면 캐시와 무관하게 충돌로 거절한다. 이때 소유 기록으로 가지 않으므로 거절된 요청이 주인 자리를 차지하지 못한다. 캐시의 주인이 달라도 티켓 주인이 이 사용자면 진짜 주인이므로 새 요청으로 진행해 기록을 되찾는다. 그 밖에는 주인 이름을 그대로 비교하고, 질문·attempt·환불 확인 값은 JSON으로 직렬화한 뒤 SHA-256으로 비교한다. 둘 중 하나라도 다르면 남의 응답이 나가지 않도록 충돌로 거절한다. fp가 null이면 ticketmoa-handoff가 티켓 주인만 복구한 기록이라 주인만 비교한다. 같고 60초 안이면 저장된 응답을 재생한다. 질문 원문은 저장하지 않는다.\n【출력】 {dup:\"conflict|replay|new\", fp, q_hash, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "9785e7d9-57d9-c9f0-5d19-5c141a2b84a1",
+      "name": "중복 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3000,
+        0
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.dup }}",
+                    "rightValue": "new",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.dup }}",
+                    "rightValue": "replay",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "replay"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.dup }}",
+                    "rightValue": "conflict",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conflict"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 중복 판정에 따라 길을 나눈다.\n【입력】 dup.\n【출력】 new 또는 예상 밖: 소유 기록. replay: 저장 응답 재생. conflict: 400.",
+      "notesInFlow": false
+    },
+    {
+      "id": "ab922a4b-6dc1-9ac7-1310-87c529058328",
+      "name": "충돌 400 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3300,
+        -150
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.http400 }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "notes": "【역할】 request_id 재사용을 거절한다.\n【입력】 {http400}.\n【처리】 원래 요청의 답이나 티켓은 보여 주지 않는다. 공통 계약의 400 칸에 코드만 하나 더한 것으로, 리드 확인 대상이다.\n【출력】 HTTP 400 {\"error\":\"invalid request\",\"codes\":[\"request_id_conflict\"]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "ace38722-92a0-93cc-7c4c-bb6f35e56f82",
+      "name": "저장 응답 재생",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst c = $json.cached;\nconst s = $('요청 시각 기록').first().json;\nconst ticket = c.ticket ? { ...c.ticket, duplicate: true } : null;\nreturn [{ json: { ...c, ticket, agents: { ...(c.agents || {}), llm_calls: 0, replayed: true }, timings: { total_ms: Date.now() - s.started_ms, original_total_ms: (c.timings && c.timings.total_ms) ?? null } } }];"
+      },
+      "notes": "【역할】 같은 요청에 처음 응답을 돌려준다 (WF-09).\n【입력】 {cached}.\n【처리】 ticket.duplicate를 true로 바꾼다. llm_calls와 timings는 이번 실행의 값으로 다시 적고 첫 실행 시간은 original_total_ms에 남긴다. 티켓을 새로 만들지 않는다.\n【출력】 공통 계약 응답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "ffb7ad64-5785-ae96-888f-5c62e6308242",
+      "name": "재생 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3600,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "notes": "【역할】 재생한 응답을 보낸다.\n【입력】 저장 응답 재생.\n【출력】 HTTP 200 공통 계약 응답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "266b7c7b-1bd7-9b5d-829c-0e57a8d9b95f",
+      "name": "재생 기록 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3900,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nconst CHANNELS = ['web', 'app', 'phone', 'kiosk', 'email', 'other'];\nfunction normalizeChannel(channel) {\n  return typeof channel === 'string' && CHANNELS.includes(channel) ? channel : 'other';\n}\nfunction buildLog(req, res, extra) {\n  const e = extra || {};\n  return {\n    request_id: (req && req.request_id) || '',\n    channel: normalizeChannel(req && req.channel),\n    attempt: (req && req.attempt) || 1,\n    route: res.route,\n    intents: e.intents || [],\n    sources: (res.sources || []).map(s => `${s.doc}#${s.section}`),\n    top_scores: e.top_scores || (res.sources || []).map(s => s.score),\n    ticket: res.ticket ? (res.ticket.id || res.ticket.key || true) : null,\n    retries: e.retries || 0,\n    blocked_by: res.security.blocked_by,\n    masked: res.security.masked,\n    timings: res.timings,\n    started_at: e.started_at || '',\n    finished_at: new Date().toISOString(),\n  };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst res = $('저장 응답 재생').first().json;\nconst s = $('요청 시각 기록').first().json;\nconst log = buildLog({ request_id: res.request_id, channel: s.body.channel, attempt: s.body.attempt || 1 }, res, { intents: (res.agents && res.agents.intents) || [], started_at: new Date(s.started_ms).toISOString() });\nreturn [{ json: { items: [{ ...log, llm_calls: 0, replayed: true, reason: res.reason }] } }];"
+      },
+      "notes": "【역할】 재생한 요청도 실행 기록에 남긴다.\n【입력】 저장 응답 재생 결과.\n【처리】 buildLog를 쓰고 replayed 표시를 단다. 이 표시로 --repeat의 재전송과 독립 실행을 구분한다.\n【출력】 {items:[...]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "2de042d1-264e-3ab6-6ae6-8d505174287d",
+      "name": "재생 기록 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4200,
+        -75
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/logs",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 재생 기록을 저장한다.\n【입력】 재생 기록 조립.\n【처리】 POST /logs. 응답을 보낸 뒤 실행한다.\n【출력】 {stored, live}.\n【실패 시】 실패해도 고객 응답에 영향이 없다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "dd7da144-a5ff-5acf-9b02-2cb422a4b22f",
+      "name": "소유 기록",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        150
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ encodeURIComponent('req:' + $json.request_id) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: { owner: $json.user, fp: $json.fp }, ttl: 86400 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이 request_id의 주인을 하루 동안 기록한다.\n【입력】 {request_id, user, fp}.\n【처리】 POST /cache. 중복 판정을 통과한 요청만 여기 온다. 응답 재생은 60초지만 주인 기록은 더 오래 둔다. 그래야 다른 사용자가 같은 번호로 남의 티켓을 받지 못한다.\n【출력】 {statusCode, body}.\n【실패 시】 실패해도 진행한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "1caeb5f5-addc-71cd-f85e-555aa91ff62d",
+      "name": "반복 기록 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3600,
+        150
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ encodeURIComponent('ratelimit:' + $('중복 판정').first().json.user + ':' + $('중복 판정').first().json.q_hash) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 같은 사용자의 같은 질문 반복 기록을 읽는다 (TM-09, 가산).\n【입력】 user, q_hash.\n【처리】 사용자 단위로 세면 --repeat 3 시험에서 정상 시나리오가 막히므로 사용자+질문 단위로 센다.\n【출력】 {statusCode, body:{value:[시각...]}}.\n【실패 시】 읽지 못하면 빈 기록으로 보고 통과시킨다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "641b3f07-2e6b-23cd-1cbc-683886a6a288",
+      "name": "반복 요청 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3900,
+        150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nconst RATE_LIMIT = { max: 5, windowSeconds: 60 };\nfunction checkRateLimit(recent, now) {\n  const t = now || new Date();\n  const from = t.getTime() - RATE_LIMIT.windowSeconds * 1000;\n  const kept = (recent || []).filter(x => new Date(x).getTime() > from);\n  kept.push(t.toISOString());\n  const blocked = kept.length > RATE_LIMIT.max;\n  return { blocked, recent: kept, count: kept.length, reason: blocked ? 'too_many_requests' : '' };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst j = $('중복 판정').first().json;\nconst r = readHttp($json);\nconst recent = r.ok && Array.isArray(r.body.value) ? r.body.value : [];\nconst rate = checkRateLimit(recent);\nreturn [{ json: { ...j, rate_blocked: rate.blocked, rate_recent: rate.recent, rate_reason: rate.reason } }];"
+      },
+      "notes": "【역할】 60초에 5회를 넘었는지 판단한다.\n【입력】 반복 기록 조회 응답.\n【처리】 checkRateLimit을 그대로 쓴다. 차단된 요청도 기록에 남아 계속 보내면 계속 막힌다. 재생과 규칙 차단은 이 노드 앞에서 끝나므로 세지 않는다.\n【출력】 {rate_blocked, rate_recent, rate_reason, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "63724124-a5ac-79ea-56d2-eea6b5c4a533",
+      "name": "반복 기록 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4200,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ encodeURIComponent('ratelimit:' + $json.user + ':' + $json.q_hash) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.rate_recent, ttl: 120 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이번 요청을 기록에 더한다.\n【입력】 {rate_recent}.\n【처리】 POST /cache. 읽고 고치고 쓰는 방식이라 동시 요청은 놓칠 수 있다.\n【출력】 {statusCode, body}.\n【실패 시】 실패해도 진행한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "472d2aef-1ca6-4299-7f6d-0c2047d86f94",
+      "name": "반복 차단?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4500,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('반복 요청 판정').first().json.rate_blocked }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 반복 요청이면 LLM 앞에서 끝낸다.\n【입력】 rate_blocked.\n【출력】 참: 반복 차단 답. 거짓: 환불 확인 판단.",
+      "notesInFlow": false
+    },
+    {
+      "id": "f4d88128-b7e2-09d9-c3ca-dc131b6d432a",
+      "name": "반복 차단 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $('반복 요청 판정').first().json;\nreturn [{ json: { route: '차단', answer: '같은 요청이 짧은 시간에 반복되어 잠시 처리를 제한했습니다. 1분 뒤 다시 시도해 주세요.', sources: [], ticket: null, reason: j.rate_reason, blocked_by: 'rate_limit', sec_reason: j.rate_reason, roles: ['guard'], masked: 0 } }];"
+      },
+      "notes": "【역할】 반복 요청 차단 답이다.\n【입력】 반복 요청 판정.\n【출력】 {route:\"차단\", blocked_by:\"rate_limit\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "b227956e-98d5-1593-f605-cd5d3f6967ff",
+      "name": "환불 확인 요청?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4800,
+        75
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('반복 요청 판정').first().json.context.pending_action === 'refund_request' && typeof $('반복 요청 판정').first().json.context.confirm === 'boolean' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 환불 2차 요청은 분류 없이 바로 환불 처리로 보낸다.\n【입력】 context.\n【처리】 이것은 길만 정한다. 확인이 유효한지는 ticketmoa-refund가 서버 상태로 판단한다.\n【출력】 참: 환불 호출 준비. 거짓: 레지스트리 로드.",
+      "notesInFlow": false
+    },
+    {
+      "id": "d2e64657-dac8-d1b4-08c1-10cc6d994fcf",
+      "name": "레지스트리 로드",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $('반복 요청 판정').first().json;\nreturn [{ json: { ...j, registry: {\"version\":1,\"intents\":[{\"intent_id\":\"tech_issue\",\"description\":\"모바일티켓 QR, 입장 게이트, 앱 오류 같은 기술 문제\",\"examples\":[\"QR이 안 떠요\",\"게이트에서 인식이 안 돼요\",\"앱이 자꾸 꺼져요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-tech\",\"automation\":\"auto\",\"escalate_if\":[\"urgency=high\"],\"kb_scope\":[\"mobile-ticket-troubleshooting\",\"onsite-entry-fallback\"]},{\"intent_id\":\"account_issue\",\"description\":\"로그인, 본인인증, 회원정보 변경\",\"examples\":[\"로그인이 반복돼요\",\"인증 문자가 안 와요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-tech\",\"automation\":\"auto\",\"escalate_if\":[],\"kb_scope\":[\"app-login-troubleshooting\"]},{\"intent_id\":\"general_info\",\"description\":\"주차, 입장 시간, 관람 연령, 물품 보관 같은 공연장 이용 정보\",\"examples\":[\"주차 돼요?\",\"몇 시부터 입장해요?\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-tech\",\"automation\":\"auto\",\"escalate_if\":[],\"kb_scope\":[\"venue-faq\"]},{\"intent_id\":\"booking_lookup\",\"description\":\"내 예매·문의 건 상태 확인\",\"examples\":[\"C-2002 어떻게 됐어요?\",\"내 예매 확인해 줘\"],\"required_slots\":[\"record_id\"],\"handler\":\"/webhook/ticketmoa-payment\",\"automation\":\"auto\",\"escalate_if\":[],\"kb_scope\":[]},{\"intent_id\":\"payment_error\",\"description\":\"결제됐는데 예매 없음, 이중결제, 결제 실패, 영수증\",\"examples\":[\"두 번 결제됐어요\",\"결제됐는데 예매가 없어요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-payment\",\"automation\":\"lookup_then_handoff\",\"escalate_if\":[\"always\"],\"kb_scope\":[\"payment-error-guide\"]},{\"intent_id\":\"fair_booking\",\"description\":\"매크로 의심 예매 제한, 보안 문자, 해외 접속 예매 차단, VPN 문의\",\"examples\":[\"매크로로 의심받아서 예매가 막혔어요\",\"해외에서 예매가 안 돼요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-tech\",\"automation\":\"auto\",\"escalate_if\":[\"appeal_requested\"],\"kb_scope\":[\"fair-booking-policy\"]},{\"intent_id\":\"scalping_report\",\"description\":\"암표·부정 판매 신고\",\"examples\":[\"중고 사이트에서 웃돈 붙여 팔아요\",\"암표 신고할게요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-handoff\",\"automation\":\"handoff\",\"escalate_if\":[\"always\"],\"kb_scope\":[\"fair-booking-policy\"]},{\"intent_id\":\"refund_request\",\"description\":\"예매 취소와 환불 요청, 환불 금액 문의\",\"examples\":[\"취소할게요\",\"환불 얼마 돼요?\"],\"required_slots\":[\"record_id\"],\"handler\":\"/webhook/ticketmoa-refund\",\"automation\":\"confirm_then_ticket\",\"escalate_if\":[\"refund>300000\",\"show_day\",\"sentiment=angry\"],\"kb_scope\":[\"refund-policy\"]},{\"intent_id\":\"human_request\",\"description\":\"상담원 연결을 직접 요청\",\"examples\":[\"상담원 연결해 주세요\",\"사람이랑 얘기하고 싶어요\"],\"required_slots\":[],\"handler\":\"/webhook/ticketmoa-handoff\",\"automation\":\"handoff\",\"escalate_if\":[\"always\"],\"kb_scope\":[]}]}, t_classify_start: Date.now() } }];"
+      },
+      "notes": "【역할】 업무 레지스트리를 분류 요청에 싣는다.\n【입력】 요청 정보.\n【처리】 config/registry.json의 복사본이다. n8n이 파일을 읽지 못해 빌드 때 넣는다. 분류 목록은 여기서 나오지만 라우팅은 라우팅 계획 노드의 규칙이므로, 새 업무를 처리하려면 레지스트리 항목에 더해 그 노드의 분기와 하위 웹훅이 필요하다.\n【출력】 {registry, t_classify_start, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "22415a2e-8b27-e1c3-4e74-d4c2b77f5e30",
+      "name": "분류 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5400,
+        0
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-agents",
+        "options": {
+          "timeout": "={{ Math.max(1000, Math.min(4000, $json.deadline_ms - Date.now())) }}",
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, question: $json.question, attempt: $json.attempt, registry: $json.registry }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 Supervisor에 문의 분류를 맡긴다.\n【입력】 {request_id, user, question, attempt, registry}. context는 LLM 쪽으로 보내지 않는다.\n【처리】 POST /webhook/ticketmoa-agents, timeout은 4초와 남은 시간 중 짧은 쪽이다.\n【출력】 {statusCode, body:{intents, entities, sentiment, urgency, confidence, clarity, missing, signals, llm_calls}}.\n【실패 시】 실패·timeout은 라우팅 계획에서 이관으로 처리한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "5da3609c-b650-0b25-281d-e84890002ff3",
+      "name": "라우팅 계획",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5700,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nconst CONFIDENCE_MIN = 0.7;\nconst MAX_ATTEMPT = 3;\nfunction decideRoute(cls, req) {\n  const c = cls || {};\n  const attempt = (req && req.attempt) || 1;\n  const intents = c.intents || [];\n  if (intents.includes('human_request')) return { next: 'handoff', reason: 'customer_asked_human' };\n  if (c.sentiment === 'angry') return { next: 'handoff', reason: 'strong_negative_sentiment' };\n  const unsure = !intents.length || (c.confidence || 0) < CONFIDENCE_MIN || (c.missing || []).length > 0;\n  if (unsure) {\n    if (attempt >= MAX_ATTEMPT) return { next: 'handoff', reason: 'clarify_limit_reached' };\n    return { next: 'clarify', reason: 'low_confidence_or_missing' };\n  }\n  return { next: 'handler', reason: '' };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst j = $('레지스트리 로드').first().json;\nconst r = readHttp($json);\nconst c = r.ok ? r.body : { error: r.errorCode ? 'classify_unavailable' : (r.body.error || 'classify_failed') };\nconst llm_classify = typeof c.llm_calls === 'number' ? c.llm_calls : (r.status === null ? 1 : 0);\nconst base = { ...j, registry: undefined, cls: c, llm_classify, t_classified: Date.now() };\nconst plan = (p) => [{ json: { ...base, need_search: false, need_lookup: false, search_query: j.question, search_scope: [], top_k: 3, record_id: (c.entities && c.entities.record_id) || '', force_handoff: false, handoff_reason: '', category: 'general', priority: 'normal', urgent: false, ...p } }];\nconst signals = c.signals || {};\nif ((c.error || !Array.isArray(c.intents)) && !signals.urgent) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: c.error || 'classify_failed', category: 'general', sentiment: 'neutral' });\n}\nconst intents = Array.isArray(c.intents) ? c.intents : [];\nconst reg = new Map(j.registry.intents.map(i => [i.intent_id, i]));\nconst TECH = ['tech_issue', 'account_issue', 'general_info', 'fair_booking'];\nconst hasTech = intents.some(i => TECH.includes(i));\nconst hasLookup = intents.includes('booking_lookup');\nconst hasPay = intents.includes('payment_error');\nconst hasRefund = intents.includes('refund_request');\nconst hasScalp = intents.includes('scalping_report');\nconst hasHuman = intents.includes('human_request');\nconst scope = [...new Set(intents.flatMap(i => (reg.get(i) || {}).kb_scope || []))];\nconst families = [hasTech, hasPay, hasRefund, hasScalp].filter(Boolean).length;\nconst record_id = (c.entities && c.entities.record_id) || '';\nconst canSearch = scope.length > 0;\n\n// 1. 슬롯 검사보다 먼저 보는 이관 (TM-06, WF-12, 암표, 결제)\nif (hasRefund && signals.show_day) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: 'show_day_cancel', category: 'refund_exception', need_search: true, search_scope: ['refund-policy'], search_query: '관람 당일 취소 ' + j.question, need_lookup: !!record_id, record_id });\n}\nif (signals.urgent) {\n  return plan({ next: 'work', mode: 'tech', force_handoff: true, urgent: true, handoff_reason: 'urgent_entry', category: 'onsite_entry', priority: 'high', need_search: true, search_query: '공연 직전 현장 발권 창구 대체 입장 방법. ' + j.question, search_scope: ['onsite-entry-fallback', 'mobile-ticket-troubleshooting'], top_k: 4, need_lookup: !!record_id, record_id });\n}\nif (hasScalp) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: 'scalping_report', category: 'security', need_search: true, search_scope: ['fair-booking-policy'] });\n}\n\n// 2. 공통 규칙 (lib decideRoute). 등록 업무 밖이지만 뜻이 분명한 문의는 보완 질문으로 빠지지 않게 한다.\nconst unmatchedClear = intents.length === 0 && c.clarity === 'clear' && c.confidence >= CONFIDENCE_MIN;\nconst d = decideRoute({ ...c, intents: unmatchedClear ? ['__unmatched'] : intents }, { attempt: j.attempt });\nif (d.next === 'clarify') {\n  return plan({ next: 'clarify', mode: 'clarify', clarify_question: c.clarify_question || '어떤 문제가 있는지 조금 더 자세히 알려 주세요.' });\n}\nif (d.next === 'handoff') {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: d.reason, category: hasPay ? 'payment' : (hasRefund ? 'refund_exception' : (hasTech ? 'tech' : 'general')), need_search: canSearch, search_scope: scope, need_lookup: !!record_id && (hasLookup || hasPay), record_id });\n}\n\n// 3. 지원하는 복합은 기술+조회, 결제+조회, 환불+조회다. 그 밖의 조합은 사람이 본다.\nif (families > 1) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: 'unsupported_combination', category: 'general', need_search: canSearch, search_scope: scope, need_lookup: !!record_id, record_id });\n}\nif (hasPay) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: 'payment_error', category: 'payment', need_search: true, search_scope: scope, need_lookup: !!record_id, record_id });\n}\nif (hasRefund) return plan({ next: 'refund', mode: 'refund', record_id });\nif (intents.includes('fair_booking') && signals.appeal) {\n  return plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: 'appeal_requested', category: 'security', need_search: true, search_scope: ['fair-booking-policy'] });\n}\nif (hasTech || unmatchedClear) {\n  return plan({ next: 'work', mode: 'tech', category: 'tech', need_search: true, search_scope: unmatchedClear ? [] : scope, need_lookup: hasLookup && !!record_id, record_id });\n}\nif (hasLookup) return plan({ next: 'work', mode: 'lookup', need_lookup: true, record_id });\nreturn plan({ next: 'work', mode: 'handoff', force_handoff: true, handoff_reason: hasHuman ? 'customer_asked_human' : 'no_handler', category: 'general' });"
+      },
+      "notes": "【역할】 분류 결과와 규칙으로 처리 계획을 세운다. 시스템의 핵심 판단이 모두 여기에 있다.\n【입력】 분류 호출 응답, 레지스트리.\n【처리】 ① 분류 실패(error)를 confidence보다 먼저 봐서 이관한다. 다만 공연 직전 입장 문제는 규칙으로 판정되므로 LLM이 멈춰도 대체 입장 안내와 긴급 티켓을 그대로 낸다. ② 당일 취소, 공연 직전 입장, 암표는 슬롯 검사 전에 이관으로 정하되 근거 검색과 본인 조회는 하게 한다. ③ decideRoute로 보완 질문·이관을 정한다. 등록 업무 밖이지만 뜻이 분명한 문의는 전체 검색으로 보낸다(WF-03). ④ 지원 복합 조합만 처리한다.\n【출력】 {next, mode, force_handoff, handoff_reason, category, priority, urgent, need_search, search_query, search_scope, top_k, need_lookup, record_id, cls, llm_classify, ...}.\n【실패 시】 handler URL은 LLM 값이 아니라 고정이다. 어떤 분기에도 안 맞으면 no_handler로 이관한다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "5657f58f-dc7a-0294-fd1b-aae5a27acd88",
+      "name": "다음 단계 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        6000,
+        0
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next }}",
+                    "rightValue": "clarify",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "clarify"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next }}",
+                    "rightValue": "refund",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "refund"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next }}",
+                    "rightValue": "work",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "work"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 계획에 따라 길을 나눈다.\n【입력】 next.\n【출력】 clarify: 보완 질문 답. refund: 환불 호출 준비. work 또는 예상 밖: 검색·조회 준비.",
+      "notesInFlow": false
+    },
+    {
+      "id": "1eb139e1-bb82-c627-ef85-04385f07ed76",
+      "name": "보완 질문 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6300,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $json;\nreturn [{ json: { route: '보완 질문', answer: j.clarify_question, sources: [], ticket: null, reason: 'low_confidence_or_missing', roles: ['triage'], masked: 0, agents_extra: { intents: j.cls.intents, confidence: j.cls.confidence, sentiment: j.cls.sentiment, urgency: j.cls.urgency, attempt: j.attempt } } }];"
+      },
+      "notes": "【역할】 보완 질문을 돌려준다 (WF-02). 다음 요청의 attempt는 호출자가 올린다.\n【입력】 라우팅 계획.\n【처리】 문구는 agents가 규칙으로 만든 것이다. attempt가 3이면 이 길로 오지 않고 이관된다 (WF-02b).\n【출력】 {route:\"보완 질문\", answer, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "ab23ff99-3590-f2f5-744b-4bb8946ffe2c",
+      "name": "환불 호출 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6300,
+        225
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $('반복 요청 판정').first().json;\nconst plan = $('라우팅 계획').isExecuted ? $('라우팅 계획').first().json : {};\nconst cls = plan.cls || {};\nreturn [{ json: { request_id: j.request_id, user: j.user, access_level: j.access_level, question: j.question, record_id: plan.record_id || '', booking_id: j.context.booking_id || (cls.entities && cls.entities.booking_id) || '', context: { pending_action: j.context.pending_action, confirm: j.context.confirm, booking_id: j.context.booking_id }, deadline_ms: j.deadline_ms, t_refund_start: Date.now() } }];"
+      },
+      "notes": "【역할】 환불 웹훅에 보낼 값을 고른다.\n【입력】 요청 정보, (있으면) 라우팅 계획.\n【처리】 context에서 필요한 세 칸만 넘긴다.\n【출력】 {request_id, user, access_level, question, record_id, booking_id, context, deadline_ms}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "69216488-b6ac-5915-24db-b9523a6d3bae",
+      "name": "환불 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6600,
+        300
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-refund",
+        "options": {
+          "timeout": "={{ Math.max(1000, Math.min(5000, $json.deadline_ms - Date.now())) }}",
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 환불 처리를 맡긴다.\n【입력】 환불 호출 준비 결과.\n【처리】 POST /webhook/ticketmoa-refund. 티켓이 필요하면 그 안에서 한 번만 만든다.\n【출력】 {statusCode, body:{route, answer, sources, ticket, pending_action, masked, llm_calls, reason}}.\n【실패 시】 timeout은 환불 결과 읽기에서 이관 안내로 바꾼다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "37efc9f1-e0fa-73b6-f443-0a0a70ad9108",
+      "name": "환불 결과 읽기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6900,
+        150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst r = readHttp($json);\nif (r.ok && r.body.route) {\n  const b = r.body;\n  return [{ json: { route: b.route, answer: b.answer, sources: b.sources || [], ticket: b.ticket ?? null, reason: b.reason || '', roles: ['triage', 'retriever', 'refund'], masked: b.masked || 0, llm_extra: b.llm_calls || 0, handoff_retries: b.retries || 0, agents_extra: b.pending_action ? { pending_action: b.pending_action } : {} } }];\n}\nreturn [{ json: { route: '담당자 이관', answer: '환불 요청의 처리 결과를 지금 확인하지 못했습니다. 잠시 뒤 같은 요청으로 다시 확인해 주세요. 챗봇이 직접 취소하거나 환불하지는 않습니다.', sources: [], ticket: null, reason: 'refund_unavailable', roles: ['refund'], masked: 0 } }];"
+      },
+      "notes": "【역할】 환불 결과를 응답 조립 모양으로 바꾼다.\n【입력】 환불 호출 응답.\n【처리】 호출이 timeout이어도 하위 실행은 계속되어 티켓이 생겼을 수 있다. 그래서 \"접수 안 됨\"이라고 단정하지 않고 결과를 확인하지 못했다고 말한다.\n【출력】 응답 조립에 넘길 값.",
+      "notesInFlow": false
+    },
+    {
+      "id": "aef91bb7-0ff4-3979-a0c4-eb35ec8b2ab0",
+      "name": "검색 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6300,
+        -225
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.need_search }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 근거 검색이 필요한지 정한다.\n【입력】 need_search.\n【출력】 참: 지식 검색. 거짓: 검색 생략.",
+      "notesInFlow": false
+    },
+    {
+      "id": "ca3950d8-e21e-56a9-5dfd-ae3d70f2ef2f",
+      "name": "조회 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6300,
+        75
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.need_lookup }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 본인 건 조회가 필요한지 정한다.\n【입력】 need_lookup.\n【처리】 문의번호가 있을 때만 조회한다. 임의로 예매를 찾지 않는다.\n【출력】 참: 본인 건 조회. 거짓: 조회 생략.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e822796c-ff53-4caa-f9fb-50bb28e3aaeb",
+      "name": "지식 검색",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6600,
+        -300
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-search",
+        "options": {
+          "timeout": "={{ Math.max(500, Math.min(2000, $json.deadline_ms - Date.now())) }}",
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.search_query, access_level: $json.access_level, top_k: $json.top_k, scope: $json.search_scope }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 권한에 맞는 지식 문서에서 근거를 찾는다 (갈래 1).\n【입력】 {search_query, access_level, top_k, search_scope}.\n【처리】 POST /webhook/ticketmoa-search. access_level은 사용자 조회에서 온 값이다.\n【출력】 {statusCode, body:{hits, top_score, indexed, error?}}.\n【실패 시】 timeout·오류는 검색 결과 읽기에서 근거 없음으로 처리한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "a1539903-d474-ce3e-1200-a6cfa233457b",
+      "name": "본인 건 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6600,
+        0
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-payment",
+        "options": {
+          "timeout": 3500,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, record_id: $json.record_id, deadline_ms: $json.hard_deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 본인 예매·문의 건을 조회한다 (갈래 2).\n【입력】 {request_id, user, record_id}.\n【처리】 POST /webhook/ticketmoa-payment. 예산은 빠른 마감(5.3초)을 쓴다. 조회 API가 느리면 티켓 API도 느리기 때문이다 (같은 fault).\n【출력】 {statusCode, body:{status, record, forbidden, masked}}.\n【실패 시】 실패는 조회 결과 읽기에서 error로 처리해 이관한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "bd659508-dbab-115a-3652-3a40281ceafe",
+      "name": "검색 결과 읽기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6900,
+        -150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst r = readHttp($json);\nconst hits = r.ok && Array.isArray(r.body.hits) ? r.body.hits : [];\nconst kb_error = r.ok ? (r.body.error || '') : (r.status === null ? 'search_timeout' : 'search_failed');\nreturn [{ json: { part: 'search', hits, kb_error } }];"
+      },
+      "notes": "【역할】 검색 결과를 합치기 좋은 모양으로 바꾼다.\n【입력】 지식 검색 응답.\n【출력】 {part:\"search\", hits, kb_error}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "32b1424c-1240-2146-7315-e6d93cbb582b",
+      "name": "검색 생략",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6600,
+        -150
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { part: 'search', hits: [], kb_error: '', skipped: true } }];"
+      },
+      "notes": "【역할】 검색이 필요 없을 때 Merge 입력을 채운다.\n【입력】 검색 필요? 거짓.\n【출력】 {part:\"search\", hits:[]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "623913d7-e111-b77f-a767-cd2deff6f538",
+      "name": "조회 결과 읽기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6900,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst r = readHttp($json);\nconst status = r.ok ? (r.body.status || 'error') : 'error';\nreturn [{ json: { part: 'lookup', status, record: status === 'ok' ? r.body.record : null, masked: r.ok ? (r.body.masked || 0) : 0 } }];"
+      },
+      "notes": "【역할】 조회 결과를 합치기 좋은 모양으로 바꾼다.\n【입력】 본인 건 조회 응답.\n【처리】 본인 건이 아니면 record를 버린다.\n【출력】 {part:\"lookup\", status, record, masked}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "c7617914-d1de-2c74-9bd9-a8c0abe1cdc7",
+      "name": "조회 생략",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6600,
+        150
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { part: 'lookup', status: 'skipped', record: null, masked: 0 } }];"
+      },
+      "notes": "【역할】 조회가 필요 없을 때 Merge 입력을 채운다.\n【입력】 조회 필요? 거짓.\n【출력】 {part:\"lookup\", status:\"skipped\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "7ec7fa4e-f480-71f0-a676-55b3bb59d57e",
+      "name": "두 갈래 합치기",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        7200,
+        0
+      ],
+      "parameters": {
+        "numberInputs": 2
+      },
+      "notes": "【역할】 검색과 조회 갈래를 기다려 합친다.\n【입력】 갈래 1(검색), 갈래 2(조회).\n【처리】 갈래마다 항상 항목이 하나 온다. n8n v1 실행 순서에서 HTTP 호출은 동시가 아니라 차례로 실행되므로 시간 예산은 합으로 계산했다.\n【출력】 항목 2개.",
+      "notesInFlow": false
+    },
+    {
+      "id": "106f6a4a-1f6b-f2e2-da9b-6eb903852d09",
+      "name": "결과 합치기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nconst URGENT_MINUTES = 30;\nfunction urgencyFor(showStartISO, now) {\n  if (!showStartISO) return 'normal';\n  const diffMin = (new Date(showStartISO) - (now || new Date())) / 60000;\n  return diffMin >= -20 && diffMin <= URGENT_MINUTES ? 'high' : 'normal';\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst p = $('라우팅 계획').first().json;\nconst parts = $input.all().map(i => i.json);\nconst search = parts.find(x => x.part === 'search') || { hits: [], kb_error: '' };\nconst lookup = parts.find(x => x.part === 'lookup') || { status: 'skipped', record: null, masked: 0 };\nconst rec = lookup.record;\nconst entry = /QR|큐알|모바일\\s*티켓|입장|게이트/i.test(p.question);\nlet urgent = p.urgent;\nlet priority = p.priority;\nlet force = p.force_handoff;\nlet reason = p.handoff_reason;\nlet category = p.category;\n// 고객 표현이 없어도 본인 기록의 공연이 임박했으면 긴급이다.\nconst showMatch = rec && String(rec.show || '').match(/(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2})/);\nif (!urgent && entry && p.mode === 'tech' && showMatch && urgencyFor(showMatch[1] + 'T' + showMatch[2] + ':00+09:00') === 'high') {\n  urgent = true; priority = 'high'; force = true; reason = 'urgent_entry'; category = 'onsite_entry';\n}\nlet lookup_note = '';\nlet lookup_route = '';\nif (lookup.status === 'ok') {\n  lookup_note = rec.ticket_id + ' 건은 현재 ' + rec.status + ' 상태입니다 (담당: ' + rec.assignee + ', 갱신: ' + rec.updated + '). ' + (rec.note || '');\n  if (/연락처|전화|이메일|메일/.test(p.question) && rec.contact) lookup_note += ' 등록된 연락처는 ' + rec.contact.phone + ', ' + rec.contact.email + '입니다.';\n} else if (lookup.status === 'forbidden') {\n  lookup_note = '문의하신 번호는 본인 명의의 건이 아니어서 확인할 수 없습니다.';\n  lookup_route = '권한 없음';\n} else if (lookup.status === 'not_found') {\n  lookup_note = '문의하신 번호의 건을 찾지 못했습니다. 문의번호를 다시 확인해 주세요.';\n  lookup_route = p.attempt >= 3 ? '담당자 이관' : '보완 질문';\n} else if (lookup.status === 'error') {\n  lookup_note = '접수 건 조회가 지연되어 지금은 상태를 확인하지 못했습니다.';\n  lookup_route = '담당자 이관';\n}\nreturn [{ json: {\n  ...p, cls: p.cls, hits: search.hits, kb_error: search.kb_error, lookup_status: lookup.status, lookup_note, lookup_route, record_status: rec ? rec.status : '', booking_masked: rec && rec.booking_id ? String(rec.booking_id).replace(/-\\d+$/, '-****') : '', show_text: rec ? (rec.show || '') : '', lookup_masked: lookup.masked || 0,\n  urgent, priority, force_handoff: force, handoff_reason: reason, category, t_gathered: Date.now(),\n} }];"
+      },
+      "notes": "【역할】 검색·조회 결과를 합치고 조회 문장을 만든다.\n【입력】 두 갈래 합치기, 라우팅 계획.\n【처리】 남의 건이면 상태·연락처를 담지 않는다. 연락처는 질문에 있을 때만 말하며 이미 가려진 값이다 (WF-07). 기록의 공연이 30분 안이면 urgencyFor로 긴급으로 올린다.\n【출력】 {hits, kb_error, lookup_status, lookup_note, lookup_route, record_status, booking_masked, show_text, lookup_masked, urgent, priority, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "492bd08e-fc9e-355e-8bdc-7cd61b478718",
+      "name": "기술 답변 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7800,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.mode === 'tech' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 ticketmoa-tech를 부를지 정한다.\n【입력】 mode.\n【출력】 참: 기술 처리 호출. 거짓: 최종 경로 결정.",
+      "notesInFlow": false
+    },
+    {
+      "id": "6a4aa62d-0984-4339-800e-ad5a9779c922",
+      "name": "기술 처리 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8100,
+        0
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-tech",
+        "options": {
+          "timeout": "={{ Math.max(1000, Math.min(5000, $json.deadline_ms - Date.now() + 300)) }}",
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, access_level: $json.access_level, question: $json.question, urgency: $json.urgent ? 'high' : 'normal', hits: $json.hits, deadline_ms: $json.deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 근거로 기술 답변을 만든다.\n【입력】 {question, urgency, hits, access_level, deadline_ms}.\n【처리】 POST /webhook/ticketmoa-tech. 답변 작성과 검증이 그 안에서 일어난다. 하위가 먼저 시간 부족을 판단해 멈추도록 부모 timeout을 0.3초 더 길게 둔다.\n【출력】 {statusCode, body:{route, answer, sources, alert, llm_calls, reason}}.\n【실패 시】 실패는 최종 경로 결정에서 이관으로 처리한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "23d1a933-ac66-d9d7-4d10-8c0730101ad4",
+      "name": "최종 경로 결정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8400,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst g = $('결과 합치기').first().json;\nconst called = $('기술 처리 호출').isExecuted;\nconst techR = called ? readHttp($json) : null;\nconst tech = techR && techR.ok ? techR.body : (called ? { route: '담당자 이관', answer: '', sources: [], alert: null, llm_calls: 0, llm_incomplete: true, reason: 'tech_unavailable' } : null);\nconst SECTION_NOTE = {\n  general: '상담원 확인이 필요한 문의입니다.',\n  tech: '지식 문서에서 확실한 근거를 찾지 못해 추측하지 않고 상담원 확인으로 넘깁니다.',\n  payment: '결제 내역은 상담원이 확인합니다. 챗봇은 결제 취소를 처리하지 않습니다.',\n  refund_exception: '관람 당일에는 챗봇으로 취소할 수 없으며, 예외 여부는 상담원이 판단합니다.',\n  security: '신고는 보안팀이 확인합니다. 신고자 정보는 판매자에게 알리지 않습니다.',\n  onsite_entry: '현장 입장 문제는 상담원과 현장 스태프가 확인합니다.',\n};\nconst sentiment = (g.cls && g.cls.sentiment) || 'neutral';\nconst rank = { '담당자 이관': 3, '권한 없음': 2, '보완 질문': 1, '자동 답변': 0 };\nlet route = g.force_handoff ? '담당자 이관' : (tech ? tech.route : '자동 답변');\nif (g.lookup_route && rank[g.lookup_route] > rank[route]) route = g.lookup_route;\nlet reason = g.force_handoff ? g.handoff_reason : (tech ? tech.reason : '');\nif (!reason && g.lookup_route) reason = 'lookup_' + g.lookup_status;\nif (!reason && route === '담당자 이관') reason = 'lookup_' + g.lookup_status;\nlet lead = '';\nif (tech && tech.answer) lead = tech.answer;\nelse if (route === '담당자 이관') {\n  const cat = tech ? 'tech' : g.category;\n  lead = SECTION_NOTE[cat] || SECTION_NOTE.general;\n  if (sentiment === 'angry') lead = '불편을 드려 죄송합니다. ' + lead;\n}\nconst answer = [lead, g.lookup_note].filter(Boolean).join(' ');\nlet sources = [];\nif (tech) sources = tech.sources || [];\nelse if (route === '담당자 이관' || route === '자동 답변') sources = (g.hits || []).map(h => ({ doc: h.doc, section: h.section, score: h.score }));\nconst roles = ['triage'];\nif ((g.hits || []).length || g.need_search) roles.push('retriever');\nif (g.need_lookup) roles.push('lookup');\nif (tech) roles.push(tech.llm_calls > 0 ? 'writer' : 'fallback', ...(tech.llm_calls > 1 ? ['verifier'] : []));\nconst usedHard = g.lookup_status === 'error';\nconst maskedQ = maskPII(String(g.question).replace(/\\s+/g, ' '));\nconst q = maskedQ.text.slice(0, 120);\nconst conf = (g.cls && typeof g.cls.confidence === 'number') ? g.cls.confidence : '-';\nconst summary = '고객 요청: ' + q + ' / 다음 조치: 상담원 확인 / 시도: ' + (reason || '') + (sources.length ? ', 근거 ' + [...new Set(sources.map(x => x.doc))].join('+') : '') + ' / 확인 정보: ' + (g.lookup_status === 'ok' ? (g.record_id + ' ' + g.record_status + ' ' + (g.show_text || '')) : (g.need_lookup ? '조회 ' + g.lookup_status : '조회 없음')) + ' / 분류 ' + (((g.cls && g.cls.intents) || []).join('+') || '없음') + ' (확신 ' + conf + '), 감정 ' + sentiment;\nconst alert = g.urgent ? { channel: 'venue-staff', priority: 'high', booking: g.booking_masked, show: g.show_text, message: '공연 직전 입장 문제 문의' } : null;\nreturn [{ json: {\n  g_ok: true, route, answer, sources, reason, roles, summary, alert,\n  request_id: g.request_id, user: g.user, category: tech && route === '담당자 이관' && !g.force_handoff ? 'tech' : g.category, priority: g.priority,\n  deadline_ms: usedHard ? g.hard_deadline_ms : Math.max(g.deadline_ms, Date.now() + 800), llm_incomplete: !!(tech && tech.llm_incomplete), masked: (g.lookup_masked || 0) + (route === '담당자 이관' ? maskedQ.masked : 0),\n  llm_extra: tech ? (tech.llm_calls || 0) : 0, kb_error: g.kb_error,\n  agents_extra: { intents: (g.cls && g.cls.intents) || [], confidence: (g.cls && g.cls.confidence) ?? null, sentiment, urgency: g.urgent ? 'high' : 'normal', by: (g.cls && g.cls.by) || '' },\n  need_ticket: route === '담당자 이관',\n  t_answered: Date.now(),\n} }];"
+      },
+      "notes": "【역할】 기술 답변과 조회 결과를 합쳐 최종 route를 정한다.\n【입력】 기술 처리 호출 응답, 결과 합치기.\n【처리】 route 우선순위는 이관 > 권한 없음 > 보완 질문 > 자동 답변이다. sources에는 실제 쓴 근거만 넣는다. 조회가 실패했으면 이후 티켓 호출은 빠른 마감을 쓴다. 그 밖의 경우 LLM이 느려 마감이 지났어도 티켓에 0.8초를 준다: 티켓 API는 정상이면 수십 ms라 이 안에 접수되고, 티켓 API까지 느린 드문 경우에도 응답을 오래 붙잡지 않는다. 이때 전체 시간은 8초를 조금 넘을 수 있다. 티켓 요약은 고객 요청, 다음 조치, 시도한 일, 확인 정보, 분류·확신도·감정 순이다. 데이터 API가 title만 저장하고 길이를 제한하므로 중요한 것을 앞에 둔다. 요약은 이 자리에서 연락처를 가린다. 비상 DLQ로 가도 원문이 나가지 않는다.\n【출력】 {route, answer, sources, reason, roles, summary, alert, category, priority, deadline_ms, need_ticket, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e9ac5a85-c591-b574-c0df-831cf8e499f4",
+      "name": "티켓 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8700,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.need_ticket }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 담당자 이관일 때만 티켓을 만든다.\n【입력】 need_ticket.\n【출력】 참: 이관 호출. 거짓: 응답 조립.",
+      "notesInFlow": false
+    },
+    {
+      "id": "5b2a7756-8106-4008-d00d-c1ab798f97f7",
+      "name": "이관 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        9000,
+        0
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-handoff",
+        "options": {
+          "timeout": "={{ Math.max(1500, Math.min(5000, $json.deadline_ms - Date.now() + 1500)) }}",
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, summary: $json.summary, category: $json.category, priority: $json.priority, alert: $json.alert, deadline_ms: $json.deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 상담원 티켓을 만든다.\n【입력】 {request_id, user, summary, category, priority, alert, deadline_ms}.\n【처리】 POST /webhook/ticketmoa-handoff. 재시도, DLQ, 알림은 그 안에서 일어난다.\n【출력】 {statusCode, body:{ticket, duplicate, dlq, alert, masked, reason}}.\n【실패 시】 호출 자체가 실패하면 비상 DLQ로 간다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "52611762-52dc-687b-48b0-5a320b4010c2",
+      "name": "이관 결과 판단",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst r = readHttp($json);\nconst base = $('최종 경로 결정').first().json;\nif (r.ok) return [{ json: { ...base, handoff_called: true, ticket: r.body.ticket || null, handoff_masked: r.body.masked || 0, handoff_reason: r.body.reason || '', handoff_retries: r.body.retries || 0, dlq: r.body.dlq === true, alert_sent: r.body.alert === true } }];\nreturn [{ json: { ...base, handoff_called: false, ticket: null, handoff_masked: 0, handoff_reason: 'handoff_unavailable', handoff_retries: 0, dlq: false, alert_sent: false } }];"
+      },
+      "notes": "【역할】 이관 웹훅이 응답했는지 판단한다.\n【입력】 이관 호출 응답.\n【출력】 {handoff_called, ticket, handoff_masked, handoff_reason, dlq, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "10911bf6-e6bd-aa57-f028-4bc7b30510f1",
+      "name": "이관 웹훅 정상?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        9600,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.handoff_called }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 이관 웹훅 자체가 멈춘 경우를 가른다.\n【입력】 handoff_called.\n【출력】 참: 이관 답 조립. 거짓: 비상 DLQ.",
+      "notesInFlow": false
+    },
+    {
+      "id": "dd901dd1-a56d-9318-2ad6-0e857150d461",
+      "name": "비상 DLQ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        9900,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/dlq",
+        "options": {
+          "timeout": 800,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ item: { id: $json.request_id, requester: $json.user, category: $json.category, priority: $json.priority, summary: $json.summary }, reason: 'handoff_unavailable', workflow: 'ticketmoa-support' }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이관 웹훅이 멈춰도 요청을 잃지 않게 보관한다.\n【입력】 {request_id, user, category, priority, summary}.\n【처리】 POST /dlq. 요약은 최종 경로 결정에서 이미 가린 값이다.\n【출력】 {stored, size}.\n【실패 시】 실패하면 응답의 reason에 남고 알림은 ticketmoa-errors에 의존하지 않는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "e5a25328-9c6f-c27b-c599-4daed937c831",
+      "name": "이관 답 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst base = $('이관 결과 판단').first().json;\nconst t = base.ticket;\nconst dlqRan = $('비상 DLQ').isExecuted;\nconst stored = base.dlq || (dlqRan && $('비상 DLQ').all(0).length > 0 && readHttp($('비상 DLQ').all(0)[0].json).ok);\nconst venue = base.alert && base.alert_sent ? ' 현장 스태프에게도 알렸습니다.' : '';\nconst tail = base.handoff_reason === 'request_id_conflict'\n  ? '요청 번호가 이미 다른 요청에 쓰여 접수하지 않았습니다. 새 요청 번호로 다시 보내 주세요.'\n  : base.handoff_reason === 'duplicate_unverified'\n  ? '이전 접수 내역을 지금 확인하지 못했습니다. 잠시 뒤 같은 요청으로 다시 확인해 주세요.'\n  : t\n  ? '상담원에게 전달했습니다. 접수 번호는 ' + t.id + '입니다.' + venue\n  : (stored ? '지금은 접수 시스템이 지연되어 요청을 대기열에 보관했습니다. 처리되면 안내드립니다.' : '지금은 접수 시스템이 지연되어 등록하지 못했습니다. 잠시 뒤 다시 문의해 주세요.');\nconst reason = [base.reason, base.handoff_reason].filter(Boolean).join(':');\nreturn [{ json: { ...base, answer: [base.answer, tail].filter(Boolean).join(' '), ticket: t, reason, masked: (base.masked || 0) + (base.handoff_masked || 0), t_handed: Date.now() } }];"
+      },
+      "notes": "【역할】 티켓 결과를 고객 안내로 바꾼다.\n【입력】 이관 결과 판단, 비상 DLQ 결과.\n【처리】 티켓을 실제로 받았을 때만 번호를 말한다. 대기열 저장이 성공했을 때만 보관했다고 말한다.\n【출력】 {answer, ticket, reason, masked, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e9a0c4a1-5804-5120-6bd0-adb8997cf7cf",
+      "name": "응답 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nconst ROUTES = {\n  AUTO: '자동 답변',\n  CLARIFY: '보완 질문',\n  HANDOFF: '담당자 이관',\n  FORBIDDEN: '권한 없음',\n  BLOCKED: '차단',\n};\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nfunction buildResponse(p) {\n  const x = p || {};\n  const m = maskPII(x.answer || '');\n  const security = Object.assign({ blocked_by: '', reason: '', masked: 0 }, x.security || {});\n  security.masked = (security.masked || 0) + m.masked;\n  return {\n    request_id: x.request_id || '',\n    route: x.route || ROUTES.HANDOFF,\n    answer: m.text,\n    sources: Array.isArray(x.sources) ? x.sources.map(s => ({ doc: s.doc, section: s.section, score: s.score })) : [],\n    ticket: x.ticket === undefined ? null : x.ticket,\n    agents: x.agents || {},\n    security,\n    timings: x.timings || {},\n    reason: x.reason || '',\n  };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst s = $('요청 시각 기록').first().json;\nconst j = $json;\nconst ran = n => { try { return $(n).isExecuted; } catch (e) { return false; } };\nconst firstOf = n => (ran(n) ? $(n).first().json : null);\nconst plan = firstOf('라우팅 계획');\nconst gathered = firstOf('결과 합치기');\nconst decided = firstOf('최종 경로 결정');\nconst now = Date.now();\nconst timings = { total_ms: now - s.started_ms };\nif (plan && plan.t_classify_start) timings.classify_ms = plan.t_classified - plan.t_classify_start;\nif (gathered) timings.retrieve_ms = gathered.t_gathered - plan.t_classified;\nif (decided && gathered) timings.answer_ms = decided.t_answered - gathered.t_gathered;\nif (j.t_handed && decided) timings.handoff_ms = j.t_handed - decided.t_answered;\nconst llm_calls = ((plan && plan.llm_classify) || 0) + (j.llm_extra || 0); // 시도한 Agent 호출 수. SDK 내부 재시도는 세지 못한다.\nconst reqId = s.body.request_id || '';\nconst ticket = j.ticket ?? null;\nconst roles = j.roles || [];\nconst response = buildResponse({\n  request_id: reqId,\n  route: j.route,\n  answer: j.answer,\n  sources: j.sources || [],\n  ticket,\n  agents: { roles, llm_calls, ...(j.agents_extra || {}) },\n  security: { blocked_by: j.blocked_by || '', reason: j.sec_reason || '', masked: j.masked || 0 },\n  timings,\n  reason: j.reason || '',\n});\nconst started_at = new Date(s.started_ms).toISOString();\nconst shouldCache = !!ticket && !!reqId;\nconst KB_ERRORS = ['index_unavailable', 'search_failed', 'staff_search_failed'];\nreturn [{ json: { response, should_cache: shouldCache, intents: (j.agents_extra && j.agents_extra.intents) || [], started_at, llm_calls, kb_problem: KB_ERRORS.includes(j.kb_error), kb_error: j.kb_error || '', fp: firstOf('중복 판정') ? firstOf('중복 판정').fp : '', owner: firstOf('중복 판정') ? firstOf('중복 판정').user : '', retries: j.handoff_retries || 0, llm_incomplete: !!j.llm_incomplete } }];"
+      },
+      "notes": "【역할】 공통 계약의 9칸을 모두 채운 응답을 만든다. 모든 경로가 여기로 모인다.\n【입력】 차단, 보완 질문, 환불, 이관, 자동 답변 중 하나의 결과.\n【처리】 buildResponse를 그대로 쓴다: 빠진 칸을 채우고 answer를 한 번 더 가려 masked에 더한다. agents는 객체이고 llm_calls를 항상 숫자로 담는다 (WF-08). timings에 실측 시간을 넣는다.\n【출력】 {response, should_cache, intents, started_at, llm_calls, kb_problem, fp}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "32bc34dd-ff5d-d983-d86c-c635fda5025d",
+      "name": "응답 저장 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        10800,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.should_cache }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 티켓이 있는 응답만 재생용으로 저장한다.\n【입력】 should_cache.\n【처리】 티켓이 null이면 저장하지 않아 다음 시도가 다시 티켓을 만들 수 있다 (WF-04). 자동 답변도 저장하지 않는다: 다른 질문이나 장애 상태가 재생되지 않게 하기 위해서다.\n【출력】 참: 재생 응답 저장. 거짓: 응답 보내기.",
+      "notesInFlow": false
+    },
+    {
+      "id": "91a2f55c-174a-f96d-8836-b0429266ce64",
+      "name": "재생 응답 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        11100,
+        0
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ encodeURIComponent('req:' + $json.response.request_id) }}",
+        "options": {
+          "timeout": 800,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: { owner: $json.owner, fp: $json.fp, response: $json.response, replay_until: Date.now() + 60000 }, ttl: 86400 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 같은 요청이 다시 오면 돌려줄 응답을 저장한다.\n【입력】 {response, owner, fp}.\n【처리】 재생은 60초만 한다. /tickets-reset이 캐시를 지우지 않아 오래된 티켓 번호를 돌려주는 일을 줄이기 위해서다. 60초가 지나면 POST /tickets의 key가 duplicate를 알려 준다.\n【출력】 {statusCode, body}.\n【실패 시】 실패해도 응답은 나간다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "5f4c5d3b-b349-fb17-3a7f-5c1dede898bf",
+      "name": "응답 보내기",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        11400,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('응답 조립').first().json.response }}",
+        "options": {}
+      },
+      "notes": "【역할】 고객에게 최종 응답을 보낸다.\n【입력】 응답 조립의 response.\n【출력】 HTTP 200 {request_id, route, answer, sources, ticket, agents, security, timings, reason}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "61ab3bdd-568f-a1b2-667a-abaad30788aa",
+      "name": "색인 문제?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        11700,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('응답 조립').first().json.kb_problem }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 검색 저장소 문제를 담당자가 알 수 있게 한다.\n【입력】 kb_problem.\n【처리】 응답을 보낸 뒤라 고객 시간에 영향이 없다.\n【출력】 참: 색인 장애 알림. 거짓: 실행 기록 조립.",
+      "notesInFlow": false
+    },
+    {
+      "id": "96d00c6c-441c-bb71-3ce4-244096209e48",
+      "name": "색인 장애 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        12000,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/alerts",
+        "options": {
+          "timeout": 800,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'ticketmoa-support', node: '지식 검색', severity: 'critical', reason: $('응답 조립').first().json.kb_error, request_id: $('응답 조립').first().json.response.request_id }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 색인이 없거나 검색이 멈췄음을 알린다.\n【입력】 kb_error.\n【처리】 POST /alerts. 해결 방법은 ticketmoa-index 재실행이다.\n【출력】 {stored, count}.\n【실패 시】 실패해도 기록은 계속한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "4fbe82d3-b049-3712-f6a9-4fe1f199bdd4",
+      "name": "실행 기록 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        12300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nconst CHANNELS = ['web', 'app', 'phone', 'kiosk', 'email', 'other'];\nfunction normalizeChannel(channel) {\n  return typeof channel === 'string' && CHANNELS.includes(channel) ? channel : 'other';\n}\nfunction buildLog(req, res, extra) {\n  const e = extra || {};\n  return {\n    request_id: (req && req.request_id) || '',\n    channel: normalizeChannel(req && req.channel),\n    attempt: (req && req.attempt) || 1,\n    route: res.route,\n    intents: e.intents || [],\n    sources: (res.sources || []).map(s => `${s.doc}#${s.section}`),\n    top_scores: e.top_scores || (res.sources || []).map(s => s.score),\n    ticket: res.ticket ? (res.ticket.id || res.ticket.key || true) : null,\n    retries: e.retries || 0,\n    blocked_by: res.security.blocked_by,\n    masked: res.security.masked,\n    timings: res.timings,\n    started_at: e.started_at || '',\n    finished_at: new Date().toISOString(),\n  };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst c = $('응답 조립').first().json;\nconst s = $('요청 시각 기록').first().json;\nconst req = { request_id: c.response.request_id, channel: s.body.channel, attempt: s.body.attempt || 1 };\nconst log = buildLog(req, c.response, { intents: c.intents, started_at: c.started_at, retries: c.retries });\nreturn [{ json: { items: [{ ...log, llm_calls: c.llm_calls, llm_incomplete: c.llm_incomplete, reason: c.response.reason }] } }];"
+      },
+      "notes": "【역할】 실행 기록을 만든다.\n【입력】 응답 조립 결과.\n【처리】 buildLog를 쓴다. 질문 원문과 답변은 들어가지 않는다. channel은 buildLog가 승인 값으로 바꾸고, request_id는 입력 검사에서 형식을 제한한 값이다. retries는 티켓 재시도 횟수이고, llm_incomplete는 하위 호출 timeout으로 호출 수가 확정되지 않았다는 표시다.\n【출력】 {items:[{request_id, channel, attempt, route, intents, sources, ticket, blocked_by, masked, timings, llm_calls, ...}]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "0c2b6ba1-e4f5-9e23-a55e-e015642882d8",
+      "name": "실행 기록 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        12600,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/logs",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 실행 기록을 저장한다.\n【입력】 {items}.\n【처리】 POST /logs. 응답을 보낸 뒤 실행한다.\n【출력】 {stored, live}.\n【실패 시】 실패해도 고객 응답에 영향이 없다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "18667c35-f68a-370a-26c4-e5847501c371",
+      "name": "400 기록 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3900,
+        -150
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/logs",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 잘못된 입력 기록을 저장한다.\n【입력】 400 기록 조립 결과.\n【처리】 POST /logs.\n【출력】 {stored, live}.\n【실패 시】 실패해도 고객 응답에 영향이 없다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "문의 수신": {
+      "main": [
+        [
+          {
+            "node": "요청 시각 기록",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "요청 시각 기록": {
+      "main": [
+        [
+          {
+            "node": "사용자 목록 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사용자 목록 조회": {
+      "main": [
+        [
+          {
+            "node": "입력 검사",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "입력 검사",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "입력 검사": {
+      "main": [
+        [
+          {
+            "node": "입력 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "입력 판정": {
+      "main": [
+        [
+          {
+            "node": "규칙 차단 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "400 응답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "사용자 조회 실패 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "사용자 조회 실패 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "400 응답": {
+      "main": [
+        [
+          {
+            "node": "400 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "400 기록 조립": {
+      "main": [
+        [
+          {
+            "node": "400 기록 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사용자 조회 실패 답": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "규칙 차단 판정": {
+      "main": [
+        [
+          {
+            "node": "규칙 통과?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "규칙 통과?": {
+      "main": [
+        [
+          {
+            "node": "중복 기록 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "규칙 차단 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "규칙 차단 답": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 기록 조회": {
+      "main": [
+        [
+          {
+            "node": "티켓 주인 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "티켓 주인 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "티켓 주인 조회": {
+      "main": [
+        [
+          {
+            "node": "중복 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "중복 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 판정": {
+      "main": [
+        [
+          {
+            "node": "중복 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 분기": {
+      "main": [
+        [
+          {
+            "node": "소유 기록",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "저장 응답 재생",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "충돌 400 응답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "소유 기록",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "저장 응답 재생": {
+      "main": [
+        [
+          {
+            "node": "재생 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "재생 응답": {
+      "main": [
+        [
+          {
+            "node": "재생 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "재생 기록 조립": {
+      "main": [
+        [
+          {
+            "node": "재생 기록 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "충돌 400 응답": {
+      "main": [
+        [
+          {
+            "node": "400 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "소유 기록": {
+      "main": [
+        [
+          {
+            "node": "반복 기록 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "반복 기록 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "반복 기록 조회": {
+      "main": [
+        [
+          {
+            "node": "반복 요청 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "반복 요청 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "반복 요청 판정": {
+      "main": [
+        [
+          {
+            "node": "반복 기록 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "반복 기록 저장": {
+      "main": [
+        [
+          {
+            "node": "반복 차단?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "반복 차단?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "반복 차단?": {
+      "main": [
+        [
+          {
+            "node": "반복 차단 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "환불 확인 요청?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "반복 차단 답": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 확인 요청?": {
+      "main": [
+        [
+          {
+            "node": "환불 호출 준비",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "레지스트리 로드",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "레지스트리 로드": {
+      "main": [
+        [
+          {
+            "node": "분류 호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "분류 호출": {
+      "main": [
+        [
+          {
+            "node": "라우팅 계획",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "라우팅 계획",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "라우팅 계획": {
+      "main": [
+        [
+          {
+            "node": "다음 단계 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "다음 단계 분기": {
+      "main": [
+        [
+          {
+            "node": "보완 질문 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "환불 호출 준비",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "검색 필요?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "조회 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "검색 필요?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "조회 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "보완 질문 답": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 호출 준비": {
+      "main": [
+        [
+          {
+            "node": "환불 호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 호출": {
+      "main": [
+        [
+          {
+            "node": "환불 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "환불 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 결과 읽기": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 필요?": {
+      "main": [
+        [
+          {
+            "node": "지식 검색",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "검색 생략",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "조회 필요?": {
+      "main": [
+        [
+          {
+            "node": "본인 건 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "조회 생략",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식 검색": {
+      "main": [
+        [
+          {
+            "node": "검색 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "검색 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "본인 건 조회": {
+      "main": [
+        [
+          {
+            "node": "조회 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "조회 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 결과 읽기": {
+      "main": [
+        [
+          {
+            "node": "두 갈래 합치기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 생략": {
+      "main": [
+        [
+          {
+            "node": "두 갈래 합치기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "조회 결과 읽기": {
+      "main": [
+        [
+          {
+            "node": "두 갈래 합치기",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "조회 생략": {
+      "main": [
+        [
+          {
+            "node": "두 갈래 합치기",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "두 갈래 합치기": {
+      "main": [
+        [
+          {
+            "node": "결과 합치기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "결과 합치기": {
+      "main": [
+        [
+          {
+            "node": "기술 답변 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기술 답변 필요?": {
+      "main": [
+        [
+          {
+            "node": "기술 처리 호출",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "최종 경로 결정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기술 처리 호출": {
+      "main": [
+        [
+          {
+            "node": "최종 경로 결정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "최종 경로 결정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "최종 경로 결정": {
+      "main": [
+        [
+          {
+            "node": "티켓 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "티켓 필요?": {
+      "main": [
+        [
+          {
+            "node": "이관 호출",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 호출": {
+      "main": [
+        [
+          {
+            "node": "이관 결과 판단",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 결과 판단",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 결과 판단": {
+      "main": [
+        [
+          {
+            "node": "이관 웹훅 정상?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 웹훅 정상?": {
+      "main": [
+        [
+          {
+            "node": "이관 답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "비상 DLQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "비상 DLQ": {
+      "main": [
+        [
+          {
+            "node": "이관 답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 답 조립": {
+      "main": [
+        [
+          {
+            "node": "응답 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "응답 조립": {
+      "main": [
+        [
+          {
+            "node": "응답 저장 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "응답 저장 필요?": {
+      "main": [
+        [
+          {
+            "node": "재생 응답 저장",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "응답 보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "재생 응답 저장": {
+      "main": [
+        [
+          {
+            "node": "응답 보내기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "응답 보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "응답 보내기": {
+      "main": [
+        [
+          {
+            "node": "색인 문제?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "색인 문제?": {
+      "main": [
+        [
+          {
+            "node": "색인 장애 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "실행 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "색인 장애 알림": {
+      "main": [
+        [
+          {
+            "node": "실행 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "실행 기록 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "실행 기록 조립": {
+      "main": [
+        [
+          {
+            "node": "실행 기록 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ticketmoaErrors01"
+  },
+  "active": false,
+  "meta": {
+    "owner": "A 리드 (최두나)",
+    "purpose": "공통 계약의 본체다. 수신, 입력 검사, 규칙 차단, 중복 확인, 분류 호출, 라우팅, 결과 합치기, 응답, 기록을 맡고 업무 처리는 하위 웹훅에 맡긴다.",
+    "reference": "Last3Mon/73/reference/lab01-example2-input.json, 72/reference/lab03-example2-llm-fallback.json, 66/reference/lab03-example2-parallel.json, 77/reference/lab03-example1-helpdesk-fixed.json",
+    "scenarios": "WF-01 ~ WF-13, TM-01 ~ TM-12"
+  }
+}

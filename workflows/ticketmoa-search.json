@@ -1,0 +1,466 @@
+{
+  "id": "ticketmoaSearch01",
+  "name": "ticketmoa-search",
+  "nodes": [
+    {
+      "id": "03012670-15a0-4719-4289-554c00a5feca",
+      "name": "검색 요청 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticketmoa-search",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "【역할】 내부 검색 요청을 받는다.\n【입력】 {query, access_level, top_k, scope}. access_level은 본체가 사용자 조회로 정한 값이다.\n【처리】 팀 키가 있어야 호출할 수 있다. 그래야 access_level을 위조해 스태프 문서를 검색하지 못한다.\n【출력】 요청 항목 1개.",
+      "notesInFlow": false,
+      "webhookId": "117d7b51-6155-1b08-f9cb-d02cdc2faa74",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "1c1d59cb-8902-b6b5-8498-e50bd93766c9",
+      "name": "검색 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction memoryKeysFor(user) {\n  const keys = ['ticketmoa_kb_v1_all'];\n  if (user && user.access_level === 'staff') keys.push('ticketmoa_kb_v1_staff');\n  return keys;\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst b = $input.first().json.body || {};\nconst access_level = b.access_level === 'staff' ? 'staff' : 'all';\nconst keys = memoryKeysFor({ access_level });\nreturn [{ json: {\n  query: String(b.query || '').trim().slice(0, 700),\n  access_level,\n  keys,\n  search_staff: keys.includes('ticketmoa_kb_v1_staff'),\n  top_k: Math.min(Math.max(Number(b.top_k) || 3, 1), 8),\n  scope: Array.isArray(b.scope) ? b.scope.map(String) : [],\n} }];"
+      },
+      "notes": "【역할】 권한으로 검색할 메모리 키를 정한다. 검색 전 필터다.\n【입력】 요청 본문.\n【처리】 memoryKeysFor를 그대로 쓴다. staff가 아니면 무조건 all이고, 스태프 저장소 검색 플래그는 거짓이다.\n【출력】 {query, access_level, keys, search_staff, top_k, scope}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "0862afa7-94e8-29ed-547e-4eba03235369",
+      "name": "질문 있음?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.query.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 빈 검색어로 임베딩을 호출하지 않게 막는다.\n【입력】 검색 준비 결과.\n【출력】 참: 일반 저장소 검색. 거짓: 검색 없이 빈 결과.",
+      "notesInFlow": false
+    },
+    {
+      "id": "fce13b78-d390-1dc7-193e-bf90fd4b45ac",
+      "name": "일반 저장소 검색",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        900,
+        -75
+      ],
+      "parameters": {
+        "mode": "load",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "ticketmoa_kb_v1_all",
+          "cachedResultName": "ticketmoa_kb_v1_all"
+        },
+        "prompt": "={{ $json.query }}",
+        "topK": 8,
+        "includeDocumentMetadata": true
+      },
+      "notes": "【역할】 ticketmoa_kb_v1_all 저장소에서 질문과 비슷한 청크를 찾는다.\n【입력】 query.\n【처리】 범위 필터와 점수 기준으로 줄어들 것을 고려해 넉넉히 8개를 가져온다.\n【출력】 {document:{pageContent, metadata}, score} 항목 여러 개. 결과가 없어도 빈 항목 하나를 내보낸다 (alwaysOutputData).\n【실패 시】 임베딩 실패는 오류 출력으로 넘긴다. 검색 실패로 표시되어 본체가 이관한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "61a526ad-ea13-728d-1ff8-ee1e69a6388e",
+      "name": "일반 검색 임베딩",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        900,
+        225
+      ],
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "notes": "【역할】 일반 저장소 검색에 쓰는 임베딩 모델이다.\n【처리】 색인 때와 같은 text-embedding-3-large로 질문을 벡터로 바꾼다.",
+      "notesInFlow": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "ticketmoaOpenAi01",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "id": "c7580dcf-2f16-b274-d5d5-66fb45a407b0",
+      "name": "스태프 저장소 검색",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        1800,
+        0
+      ],
+      "parameters": {
+        "mode": "load",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "ticketmoa_kb_v1_staff",
+          "cachedResultName": "ticketmoa_kb_v1_staff"
+        },
+        "prompt": "={{ $('검색 준비').first().json.query }}",
+        "topK": 8,
+        "includeDocumentMetadata": true
+      },
+      "notes": "【역할】 ticketmoa_kb_v1_staff 저장소에서 질문과 비슷한 청크를 찾는다.\n【입력】 query.\n【처리】 범위 필터와 점수 기준으로 줄어들 것을 고려해 넉넉히 8개를 가져온다.\n【출력】 {document:{pageContent, metadata}, score} 항목 여러 개. 결과가 없어도 빈 항목 하나를 내보낸다 (alwaysOutputData).\n【실패 시】 임베딩 실패는 오류 출력으로 넘긴다. 검색 실패로 표시되어 본체가 이관한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "4909ef23-3c3e-9488-ea8b-1d51e16e642c",
+      "name": "스태프 검색 임베딩",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1800,
+        150
+      ],
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "notes": "【역할】 스태프 저장소 검색에 쓰는 임베딩 모델이다.\n【처리】 색인 때와 같은 text-embedding-3-large로 질문을 벡터로 바꾼다.",
+      "notesInFlow": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "ticketmoaOpenAi01",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "id": "9922fc4b-d530-1496-bc91-ed6bad4f6899",
+      "name": "일반 결과 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nconst failed = items.some(i => i.json.error);\nconst raw = items.filter(i => i.json.document).map(i => ({\n  doc: i.json.document.metadata?.doc,\n  section: i.json.document.metadata?.section,\n  score: Math.round((i.json.score ?? 0) * 1000) / 1000,\n  text: i.json.document.pageContent ?? '',\n}));\nreturn [{ json: { failed, raw } }];"
+      },
+      "notes": "【역할】 일반 저장소 결과를 한 항목으로 모은다.\n【입력】 일반 저장소 검색의 성공 또는 오류 출력.\n【처리】 문서가 있는 항목만 남겨 {doc, section, score, text}로 바꾼다. 메타데이터의 access_level은 내보내지 않는다.\n【출력】 {failed, raw:[...]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "01c8c414-d259-bc38-7561-89ea81cac234",
+      "name": "스태프 권한?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1500,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('검색 준비').first().json.search_staff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 staff 사용자에게만 스태프 저장소 검색을 허용한다.\n【입력】 검색 준비의 search_staff.\n【처리】 일반 고객은 이 분기에서 스태프 저장소에 아예 닿지 않는다 (WF-05).\n【출력】 참: 스태프 저장소 검색. 거짓: 바로 결과 조립.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a7177cbd-36c6-a408-c072-4b844a32a465",
+      "name": "스태프 결과 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nconst failed = items.some(i => i.json.error);\nconst raw = items.filter(i => i.json.document).map(i => ({\n  doc: i.json.document.metadata?.doc,\n  section: i.json.document.metadata?.section,\n  score: Math.round((i.json.score ?? 0) * 1000) / 1000,\n  text: i.json.document.pageContent ?? '',\n}));\nreturn [{ json: { failed, raw } }];"
+      },
+      "notes": "【역할】 스태프 저장소 결과를 한 항목으로 모은다.\n【입력】 스태프 저장소 검색의 성공 또는 오류 출력.\n【출력】 {failed, raw:[...]}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "695fc22a-be37-5a94-a4e1-03e8e7f8f395",
+      "name": "검색 결과 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst SCORE_MIN = 0.42; // 실측(2026-11-02, text-embedding-3-large): 관련 질문 top 0.47~0.68, 무관 질문(제휴 카드 포인트) 0.38. 둘 사이에 둔다.\nconst p = $('검색 준비').first().json;\nconst a = $('일반 결과 정리').first().json;\nconst s = $('스태프 결과 정리').isExecuted ? $('스태프 결과 정리').first().json : { failed: false, raw: [] };\nconst indexed = a.raw.length > 0;\nconst scope = p.scope.length ? new Set(p.search_staff ? [...p.scope, 'staff-entry-manual'] : p.scope) : null;\nconst seen = new Set();\nconst hits = [...a.raw, ...s.raw]\n  .filter(h => h.doc && (!scope || scope.has(h.doc)) && h.score >= SCORE_MIN)\n  .sort((x, y) => y.score - x.score)\n  .filter(h => { const k = h.doc + '#' + h.section; if (seen.has(k)) return false; seen.add(k); return true; })\n  .slice(0, p.top_k);\nconst out = { hits, top_score: hits.length ? hits[0].score : 0, indexed };\nif (a.failed) out.error = 'search_failed';\nelse if (!indexed) out.error = 'index_unavailable';\nelse if (p.search_staff && s.failed) out.error = 'staff_search_failed';\nif (p.search_staff) out.staff_indexed = s.raw.length > 0;\nreturn [{ json: out }];"
+      },
+      "notes": "【역할】 검색 결과를 계약 모양으로 조립한다. 점수 기준이 있는 유일한 곳이다.\n【입력】 일반·스태프 결과와 검색 준비.\n【처리】 kb_scope 범위, 점수 기준(SCORE_MIN), 중복(문서+절)을 차례로 거른 뒤 top_k만 남긴다. 저장소 결과가 0건이면 색인 안 됨으로 구분한다. 점수 미달은 hits가 비어도 indexed:true다.\n【출력】 {hits:[{doc,section,score,text}], top_score, indexed, staff_indexed?, error?}.\n【실패 시】 임베딩 실패는 search_failed, 빈 저장소는 index_unavailable이고 hits가 비어 본체가 이관한다. 스태프 저장소만 실패하면 일반 근거는 돌려주되 staff_search_failed로 표시한다. 본체는 셋 모두 담당자에게 알린다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "488a3c78-a51e-9a3a-3c36-f5795fde1954",
+      "name": "빈 질문 결과",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        75
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { hits: [], top_score: 0, indexed: null, error: 'empty_query' } }];"
+      },
+      "notes": "【역할】 검색어가 없을 때의 정해진 결과다.\n【출력】 {hits:[], error:\"empty_query\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "90d1e419-ffe0-679f-3d9a-7d627a193274",
+      "name": "검색 결과 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2700,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "notes": "【역할】 검색 결과를 호출자에게 돌려준다.\n【입력】 검색 결과 조립 또는 빈 질문 결과.\n【출력】 HTTP 200 JSON. 오류여도 200이다.",
+      "notesInFlow": false
+    }
+  ],
+  "connections": {
+    "일반 검색 임베딩": {
+      "ai_embedding": [
+        [
+          {
+            "node": "일반 저장소 검색",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "스태프 검색 임베딩": {
+      "ai_embedding": [
+        [
+          {
+            "node": "스태프 저장소 검색",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 요청 수신": {
+      "main": [
+        [
+          {
+            "node": "검색 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 준비": {
+      "main": [
+        [
+          {
+            "node": "질문 있음?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "질문 있음?": {
+      "main": [
+        [
+          {
+            "node": "일반 저장소 검색",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "빈 질문 결과",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "일반 저장소 검색": {
+      "main": [
+        [
+          {
+            "node": "일반 결과 정리",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "일반 결과 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "일반 결과 정리": {
+      "main": [
+        [
+          {
+            "node": "스태프 권한?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "스태프 권한?": {
+      "main": [
+        [
+          {
+            "node": "스태프 저장소 검색",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "검색 결과 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "스태프 저장소 검색": {
+      "main": [
+        [
+          {
+            "node": "스태프 결과 정리",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "스태프 결과 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "스태프 결과 정리": {
+      "main": [
+        [
+          {
+            "node": "검색 결과 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "검색 결과 조립": {
+      "main": [
+        [
+          {
+            "node": "검색 결과 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "빈 질문 결과": {
+      "main": [
+        [
+          {
+            "node": "검색 결과 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ticketmoaErrors01"
+  },
+  "active": false,
+  "meta": {
+    "owner": "C RAG (정예진)",
+    "purpose": "사용자 권한에 맞는 저장소만 검색하고, 점수 기준을 넘는 근거만 돌려준다.",
+    "reference": "Last3Mon/71/reference/lab01-example2-search.json",
+    "scenarios": "WF-01, WF-03, WF-05, WF-12, TM-01, TM-05, TM-06, TM-07"
+  }
+}

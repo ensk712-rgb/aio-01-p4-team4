@@ -1,0 +1,1955 @@
+{
+  "id": "ticketmoaRefund01",
+  "name": "ticketmoa-refund",
+  "nodes": [
+    {
+      "id": "90f78ae1-c3e8-5d30-c546-a300accdb19c",
+      "name": "환불 요청 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticketmoa-refund",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "【역할】 본체의 환불 요청을 받는다.\n【입력】 {request_id, user, access_level, question, record_id, booking_id, context, deadline_ms}.\n【처리】 user는 본체가 검증한 값이다.\n【출력】 요청 항목 1개.",
+      "notesInFlow": false,
+      "webhookId": "b7ab69f2-754f-a2e2-ca66-b09ac030ea42",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "90b45c59-6a8a-1fb5-dfec-3cc55b738a68",
+      "name": "요청 단계 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst b = $input.first().json.body || {};\nconst context = b.context && typeof b.context === 'object' ? b.context : {};\nconst isConfirm = context.pending_action === 'refund_request' && typeof context.confirm === 'boolean';\nconst rawBooking = String(context.booking_id || b.booking_id || '').toUpperCase();\nconst booking_id = /^T\\d{8}-\\d{4}$/.test(rawBooking) ? rawBooking : '';\nreturn [{ json: {\n  request_id: String(b.request_id || ''), user: String(b.user || ''), access_level: b.access_level === 'staff' ? 'staff' : 'all',\n  question: String(b.question || ''), record_id: String(b.record_id || '').toUpperCase(), booking_id,\n  confirm: context.confirm === true, deadline_ms: Number(b.deadline_ms) || Date.now() + 5000,\n  stage: isConfirm ? 'confirm' : 'quote',\n  pending_key: encodeURIComponent('refund-pending:' + b.user + ':' + booking_id),\n} }];"
+      },
+      "notes": "【역할】 1차(금액 안내)인지 2차(확인)인지 정한다.\n【입력】 요청 본문.\n【처리】 context.pending_action과 boolean confirm이 함께 있을 때만 2차다. 문자열 \"true\"는 확인으로 보지 않는다. context의 금액은 쓰지 않는다. 형식이 틀린 예매번호는 빈 값으로 보아 대기 상태를 찾지 못한다.\n【출력】 {request_id, user, record_id, booking_id, confirm, stage, pending_key, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "637adb7f-7b1f-736a-02f7-c83cae56d096",
+      "name": "단계 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "rightValue": "quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.stage }}",
+                    "rightValue": "confirm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 단계에 따라 길을 나눈다.\n【입력】 요청 단계 판정 결과.\n【출력】 quote: 예매 조회. confirm: 대기 상태 읽기. 예상 밖 값은 quote로 보낸다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "4ca7ec42-aa50-34f1-583b-2f30682d2aba",
+      "name": "예매 조회 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -75
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-payment",
+        "options": {
+          "timeout": 4000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, record_id: $json.record_id, deadline_ms: $json.deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 환불 대상이 본인 건인지 조회한다.\n【입력】 {request_id, user, record_id, deadline_ms}.\n【처리】 ticketmoa-payment를 웹훅으로 부른다.\n【출력】 {statusCode, body:{status, record, forbidden, masked}}.\n【실패 시】 호출 실패는 조회 결과 읽기에서 error로 처리해 이관한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "243a84f5-a232-0dfb-b402-0f62284c4190",
+      "name": "조회 결과 읽기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst s = $('요청 단계 판정').first().json;\nconst r = readHttp($json);\nconst status = r.ok ? (r.body.status || 'error') : 'error';\nreturn [{ json: { ...s, lookup: status, record: r.ok ? (r.body.record || null) : null, masked: r.ok ? (r.body.masked || 0) : 0 } }];"
+      },
+      "notes": "【역할】 조회 결과를 한 값으로 정리한다.\n【입력】 예매 조회 호출 응답.\n【출력】 {lookup:\"ok|forbidden|not_found|error\", record, masked, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "d4916bfd-d7ba-fae2-a4dc-55ef7685c588",
+      "name": "조회 결과 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1500,
+        -75
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lookup }}",
+                    "rightValue": "ok",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ok"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lookup }}",
+                    "rightValue": "forbidden",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "forbidden"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lookup }}",
+                    "rightValue": "not_found",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not_found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lookup }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "error"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 조회 결과에 따라 길을 나눈다.\n【입력】 lookup.\n【출력】 ok: 환불 규정 검색. forbidden: 권한 없음 답. not_found: 번호 재확인. error 또는 예상 밖: 이관 준비.",
+      "notesInFlow": false
+    },
+    {
+      "id": "cd17f550-6d89-12a6-3c11-3281764c328c",
+      "name": "환불 규정 검색",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        -225
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-search",
+        "options": {
+          "timeout": 2000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: '예매 취소 수수료 환불 규정 ' + $json.question, access_level: $json.access_level, scope: ['refund-policy'], top_k: 2 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 안내의 근거가 되는 환불 규정 절을 찾는다.\n【입력】 {question, access_level}.\n【처리】 ticketmoa-search를 refund-policy 범위로 부른다. 금액은 규칙으로 계산하며 LLM을 쓰지 않는다.\n【출력】 {statusCode, body:{hits}}.\n【실패 시】 근거를 못 찾으면 금액 계산 노드가 이관으로 보낸다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "777a301e-2866-20e4-4a55-2a88acfa7442",
+      "name": "환불 금액 계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        -150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nconst REFUND_APPROVAL_LIMIT = 300000;\nfunction calcRefund(b) {\n  const now = b.now ? new Date(b.now) : new Date();\n  const kstDay = d => { const k = new Date(d.getTime() + 9 * 3600000); return Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); };\n  const day = 86400000;\n  const show = new Date(b.showAt);\n  const booked = new Date(b.bookedAt);\n  const daysToShow = Math.round((kstDay(show) - kstDay(now)) / day);\n  const daysSinceBooked = Math.round((kstDay(now) - kstDay(booked)) / day);\n  const qty = b.qty || 1;\n  const amount = b.amount || 0;\n\n  // 관람일 전날 오후 5시(KST)까지\n  const deadline = new Date(kstDay(show) - day + 17 * 3600000 - 9 * 3600000);\n  if (now > deadline) return { allowed: false, fee: 0, bookingFeeRefund: 0, refund: 0, rule: 'after_deadline', needsApproval: true };\n\n  let fee; let rule;\n  if (daysSinceBooked <= 7 && daysToShow >= 10) { fee = 0; rule = 'within_7_days_of_booking'; }\n  else if (daysToShow >= 10) { fee = Math.min(2000 * qty, Math.floor(amount * 0.1)); rule = 'flat_2000_per_ticket'; }\n  else if (daysToShow >= 7) { fee = Math.floor(amount * 0.1); rule = '9_to_7_days'; }\n  else if (daysToShow >= 3) { fee = Math.floor(amount * 0.2); rule = '6_to_3_days'; }\n  else { fee = Math.floor(amount * 0.3); rule = '2_days_to_day_before'; }\n\n  const bookingFeeRefund = daysSinceBooked === 0 ? 1000 * qty : 0;\n  const refund = amount - fee + bookingFeeRefund;\n  return { allowed: true, fee, bookingFeeRefund, refund, rule, needsApproval: refund > REFUND_APPROVAL_LIMIT };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nfunction parseBooking(rec) {\n  const showText = String(rec.show || '');\n  const dt = showText.match(/(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2})/);\n  const qty = showText.match(/(\\d+)\\s*매/);\n  const booked = String(rec.booking_id || '').match(/^T(\\d{4})(\\d{2})(\\d{2})-\\d+$/);\n  const amount = rec.amount;\n  if (!dt || !qty || !booked || typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || Number(qty[1]) < 1) return null;\n  const showAt = dt[1] + 'T' + dt[2] + ':00+09:00';\n  const bookedAt = booked[1] + '-' + booked[2] + '-' + booked[3] + 'T00:00:00+09:00';\n  if (isNaN(new Date(showAt)) || isNaN(new Date(bookedAt))) return null;\n  return { amount, qty: Number(qty[1]), bookedAt, showAt };\n}\nconst won = n => String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + '원';\n\nconst s = $('조회 결과 읽기').first().json;\nconst r = readHttp($json);\nconst hits = r.ok && Array.isArray(r.body.hits) ? r.body.hits : [];\nconst sources = hits.map(h => ({ doc: h.doc, section: h.section, score: h.score }));\nconst base = { ...s, sources };\nconst booking = parseBooking(s.record || {});\nconst handoff = (reason, category, summaryExtra) => ({ json: { ...base, decision: 'handoff', ho: { reason, category, priority: 'normal', sources,\n  answer: '이 환불 요청은 금액을 안내하기 전에 상담원 확인이 필요합니다. 이미 처리된 건, 관람 당일 취소, 30만원을 넘는 환불 같은 예외는 상담원이 판단합니다.',\n  summary: '환불 문의 (' + s.record_id + '). 사유: ' + reason + '. ' + (summaryExtra || '') + ' 다음 조치: 상담원이 규정과 예외 여부를 판단.' } } });\nif (!booking) return [handoff('booking_data_incomplete', 'refund_exception', '기록에 금액·공연 정보가 부족해 계산하지 않음.')];\n// 이 기록의 status는 상담 처리 상태다. 접수됨이 아니면 이미 처리 중이거나 끝난 건이므로 새 금액을 내지 않는다 (C-2003은 환불 완료).\nif (s.record.status !== '접수됨') return [handoff('record_not_open', 'refund_exception', '기록 상태가 ' + s.record.status + '. 새 환불로 계산하지 않음.')];\nif (!hits.length) return [handoff('no_policy_evidence', 'refund_exception', '환불 규정 근거를 찾지 못함.')];\nconst calc = calcRefund(booking);\nif (!calc.allowed) return [handoff('after_deadline', 'refund_exception', '취소 가능 시한(관람일 전날 17시) 경과.')];\nif (calc.needsApproval) return [handoff('over_limit', 'refund_exception', '환불 예정 ' + won(calc.refund) + '. 30만원 초과.')];\nconst pending = { status: 'pending', record_id: s.record_id, booking_id: s.record.booking_id, refund: calc.refund, fee: calc.fee, rule: calc.rule, sources, quoted_at: new Date().toISOString() };\nreturn [{ json: { ...base, decision: 'quote', calc, pending, pending_key: encodeURIComponent('refund-pending:' + s.user + ':' + s.record.booking_id) } }];"
+      },
+      "notes": "【역할】 기록을 해석해 환불 금액을 계산하고 다음 단계를 정한다.\n【입력】 조회 결과, 환불 규정 검색 응답.\n【처리】 공연일시·매수는 show 문자열에서, 예매일은 booking_id에서 뽑는다. 값이 하나라도 이상하면 계산하지 않는다 (C-2004처럼 금액이 없는 건). 기록 상태가 접수됨이 아니면 이미 처리된 건으로 보고 계산하지 않는다 (C-2003). calcRefund는 lib 원문이며 시한 경과와 30만원 초과를 판단한다.\n【출력】 quote: {calc, pending, pending_key}. handoff: {ho:{reason, category, summary, answer, sources}}.\n【실패 시】 근거 없음·데이터 부족·시한 경과·금액 초과는 모두 금액을 확정하지 않고 이관한다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e7b57e51-6b34-263c-1c78-503a3818fe8f",
+      "name": "계산 결과 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2400,
+        -75
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.decision }}",
+                    "rightValue": "handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "handoff"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 안내할지 이관할지 나눈다.\n【입력】 decision.\n【출력】 quote: 대기 상태 저장. handoff 또는 예상 밖: 이관 준비.",
+      "notesInFlow": false
+    },
+    {
+      "id": "811dcb88-9f04-d5cd-e540-43653cf78669",
+      "name": "기존 확정 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2700,
+        -225
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이 예매에 이미 접수된 환불 요청이 있는지 본다.\n【입력】 pending_key.\n【처리】 새 안내가 확정 이력을 덮어쓰면 다시 확인했을 때 티켓이 또 생긴다. 그래서 저장 전에 읽는다.\n【출력】 {statusCode, body:{value}}.\n【실패 시】 읽지 못하면 확정 이력이 없는 것으로 보고 진행한다. 티켓 전에 확인 재조회를 한 번 더 거친다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "037184a6-4a87-c048-5cbc-ed0c3fe06f82",
+      "name": "기존 확정 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        -150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst s = $('환불 금액 계산').first().json;\nconst r = readHttp($json);\nconst v = r.ok && r.body.value && typeof r.body.value === 'object' ? r.body.value : null;\nconst found = !!(v && v.status === 'confirmed' && v.ticket);\nreturn [{ json: { ...s, from: 'quote', existing: found ? v : null, check_existing: found } }];"
+      },
+      "notes": "【역할】 확정 이력이 있으면 티켓 실재 확인으로 보낸다.\n【입력】 기존 확정 조회 응답, 환불 금액 계산.\n【출력】 {from:\"quote\", existing, check_existing, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "c00628e0-fb4d-6ebe-d406-5efa70acf4d5",
+      "name": "확정 이력 있음?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        -75
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.check_existing }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 확정 이력이 있는 예매를 가른다.\n【입력】 check_existing.\n【출력】 참: 생성 티켓 확인. 거짓: 대기 상태 저장.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e6152b4c-9429-3524-5960-2b4d5ef967a8",
+      "name": "생성 티켓 확인",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3600,
+        -75
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/tickets-created",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 확정 기록의 티켓이 실제로 남아 있는지 확인한다.\n【입력】 없음. 앞 노드의 existing을 다음 노드에서 비교한다.\n【처리】 GET /tickets-created. /tickets-reset은 티켓만 지우고 캐시를 남기므로 재시험 때 없는 티켓 번호를 돌려주지 않게 한다.\n【출력】 {statusCode, body:{tickets}}.\n【실패 시】 확인하지 못하면 티켓이 있다고 본다. 이중 티켓을 막는 쪽이 안전하다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "280d5a74-b255-f7ba-281a-32c0139cf9b0",
+      "name": "확정 유효 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3900,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst prev = $('기존 확정 판정').isExecuted ? $('기존 확정 판정').first().json : $('확인 자격 판정').first().json;\nconst r = readHttp($json);\nconst list = r.ok && Array.isArray(r.body.tickets) ? r.body.tickets : null;\nconst existing = prev.existing;\nconst valid = list === null || list.some(t => t.ticket_id === existing.ticket.id && t.key === existing.ticket.key && t.requester === prev.user);\nconst next = valid ? 'existing' : (prev.from === 'quote' ? 'quote' : 'none');\nreturn [{ json: { ...prev, next_step: next } }];"
+      },
+      "notes": "【역할】 이미 접수된 건인지 최종 판단한다.\n【입력】 생성 티켓 확인 응답, 앞 단계 상태.\n【처리】 번호, key, 신청자가 모두 같은 티켓이 있으면 기존 티켓으로 답한다. /tickets-reset 뒤에는 번호가 재사용되므로 번호만 비교하지 않는다. 없으면 1차는 새 안내로, 2차는 안내 먼저 받기로 보낸다.\n【출력】 {next_step:\"existing|quote|none\", ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "0ee501c2-67b6-704c-bb86-595621241a1b",
+      "name": "확정 유효 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        4200,
+        -75
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "existing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "existing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next_step }}",
+                    "rightValue": "none",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "none"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 판단에 따라 나눈다.\n【입력】 next_step.\n【출력】 existing 또는 예상 밖: 기존 티켓 답. quote: 대기 상태 저장. none: 안내 먼저 받기.",
+      "notesInFlow": false
+    },
+    {
+      "id": "dff944bf-cfcc-5252-6df0-fd8341fe3505",
+      "name": "대기 상태 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4500,
+        -150
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.pending, ttl: 1800 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 안내한 금액을 서버 쪽에 저장한다. 2차 확인이 이 값만 믿는다.\n【입력】 {pending, pending_key}. 키는 refund-pending:<user>:<booking_id>이다.\n【처리】 POST /cache, 30분 유지. 고객이 보내는 context는 위조할 수 있어 근거로 쓰지 않는다.\n【출력】 {statusCode, body}.\n【실패 시】 저장에 실패하면 금액은 안내하되 확정 접수는 받지 않는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "9720ee88-2ce7-71c1-374b-48183837d4ad",
+      "name": "금액 안내 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nfunction parseBooking(rec) {\n  const showText = String(rec.show || '');\n  const dt = showText.match(/(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2})/);\n  const qty = showText.match(/(\\d+)\\s*매/);\n  const booked = String(rec.booking_id || '').match(/^T(\\d{4})(\\d{2})(\\d{2})-\\d+$/);\n  const amount = rec.amount;\n  if (!dt || !qty || !booked || typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || Number(qty[1]) < 1) return null;\n  const showAt = dt[1] + 'T' + dt[2] + ':00+09:00';\n  const bookedAt = booked[1] + '-' + booked[2] + '-' + booked[3] + 'T00:00:00+09:00';\n  if (isNaN(new Date(showAt)) || isNaN(new Date(bookedAt))) return null;\n  return { amount, qty: Number(qty[1]), bookedAt, showAt };\n}\nconst won = n => String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + '원';\n\nconst s = $('환불 금액 계산').first().json;\nconst c = s.calc;\nconst saved = readHttp($json).ok;\nconst head = s.record_id + ' 건(' + (s.record.show || '') + ')을 지금 취소하면 티켓 금액 ' + won(s.record.amount) + ', 취소 수수료 ' + won(c.fee) + (c.bookingFeeRefund ? ', 예매 수수료 환불 ' + won(c.bookingFeeRefund) : '') + ', 환불 예정 금액은 ' + won(c.refund) + '입니다.';\nconst tail = saved\n  ? ' 확정하시겠어요? 확정하시면 상담원에게 환불 요청이 접수되며, 챗봇이 직접 취소하지는 않습니다.'\n  : ' 지금은 확정 접수를 받을 수 없으니 잠시 뒤 다시 요청해 주세요.';\nreturn [{ json: { route: '자동 답변', answer: head + tail, sources: s.sources, ticket: null, pending_action: saved ? { type: 'refund_request', booking_id: s.record.booking_id } : null, masked: s.masked || 0, llm_calls: 0, reason: saved ? 'refund_quote_pending_confirm' : 'pending_store_failed' } }];"
+      },
+      "notes": "【역할】 금액과 확인 질문을 답으로 만든다. 티켓은 만들지 않는다 (TM-02).\n【입력】 대기 상태 저장 결과, 환불 금액 계산 결과.\n【처리】 금액은 규칙 계산값 그대로다. 저장에 실패하면 확인 질문을 하지 않는다.\n【출력】 {route:\"자동 답변\", answer, sources, ticket:null, pending_action, reason}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a5958bd7-21fe-bf2c-858c-93368e197634",
+      "name": "남의 건 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { route: '권한 없음', answer: '본인 명의의 예매·문의 건만 확인할 수 있습니다.', sources: [], ticket: null, pending_action: null, masked: 0, llm_calls: 0, reason: 'not_owner' } }];"
+      },
+      "notes": "【역할】 다른 사람의 건이면 아무 정보 없이 거절한다.\n【입력】 조회 결과 또는 재조회 결과.\n【출력】 {route:\"권한 없음\", answer}. 상태·금액을 담지 않는다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "0152785e-6f1b-a860-67c6-48917ee10b88",
+      "name": "번호 재확인 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        -75
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { route: '보완 질문', answer: '해당 번호의 건을 찾지 못했습니다. 문의번호(C-0000 형식)를 다시 확인해 주세요.', sources: [], ticket: null, pending_action: null, masked: 0, llm_calls: 0, reason: 'record_not_found' } }];"
+      },
+      "notes": "【역할】 없는 번호면 다시 묻는다.\n【입력】 조회 결과.\n【출력】 {route:\"보완 질문\", answer}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "44ca2028-b596-8ced-7a05-be31c33f6540",
+      "name": "대기 상태 읽기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 1차 때 저장한 안내 내용을 읽는다.\n【입력】 pending_key. 키에 본체가 검증한 user가 들어 있어 남의 건은 찾아지지 않는다.\n【처리】 GET /cache/<key>.\n【출력】 {statusCode, body:{value}}. 없으면 404.\n【실패 시】 읽지 못하면 없는 것으로 처리해 티켓을 만들지 않는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "75ca7d93-f413-0c64-fd01-ee42184fffa3",
+      "name": "확인 자격 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        75
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst s = $('요청 단계 판정').first().json;\nconst r = readHttp($json);\nconst p = r.ok && r.body.value && typeof r.body.value === 'object' ? r.body.value : null;\nlet step = 'none';\nif (p && p.status === 'confirmed' && p.ticket) step = 'already';\nelse if (p && p.status === 'pending') step = s.confirm ? 'confirm' : 'decline';\nreturn [{ json: { ...s, from: 'confirm', step, pending: p, existing: step === 'already' ? p : null, record_id: p ? p.record_id : '' } }];"
+      },
+      "notes": "【역할】 이 확인이 유효한지 서버 상태로 판단한다 (확인 없는 티켓 0건을 지키는 지점이다).\n【입력】 대기 상태 읽기 응답.\n【처리】 대기 상태가 없으면 none이다: 선행 안내 없는 confirm, 남의 예매번호, 만료, 이미 철회한 건이 모두 여기로 온다. 이미 확정된 건은 already로 보내 티켓을 또 만들지 않는다.\n【출력】 {step:\"none|already|confirm|decline\", pending, record_id, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "e945785a-478d-e2c3-09de-aaaad4ca9309",
+      "name": "확인 단계 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1500,
+        75
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "none",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "none"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "already",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "already"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "confirm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.step }}",
+                    "rightValue": "decline",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "decline"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 확인 판정에 따라 길을 나눈다.\n【입력】 step.\n【출력】 none 또는 예상 밖: 안내 먼저 받기. already: 생성 티켓 확인. confirm: 재조회. decline: 대기 해제.",
+      "notesInFlow": false
+    },
+    {
+      "id": "6c029629-e0b3-af1a-1ea7-82cf58accfab",
+      "name": "안내 먼저 받기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4500,
+        150
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { route: '보완 질문', answer: '확인할 환불 안내가 없습니다. 문의번호(C-0000 형식)로 환불 금액 안내를 먼저 받아 주세요.', sources: [], ticket: null, pending_action: null, masked: 0, llm_calls: 0, reason: 'no_pending_refund' } }];"
+      },
+      "notes": "【역할】 유효한 대기 상태가 없으면 티켓을 만들지 않는다.\n【입력】 확인 자격 판정.\n【처리】 남의 예매번호를 넣어도 같은 문구라서 그 예매의 존재 여부가 드러나지 않는다.\n【출력】 {route:\"보완 질문\", ticket:null, reason:\"no_pending_refund\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "9065f6f6-66a2-3c67-e755-96ae33a9da76",
+      "name": "기존 티켓 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst p = $json.existing;\nreturn [{ json: { route: '담당자 이관', answer: '이미 접수된 환불 요청입니다. 상담원이 처리합니다. 접수 번호는 ' + p.ticket.id + '입니다.', sources: p.sources || [], ticket: { ...p.ticket, duplicate: true }, pending_action: null, masked: 0, llm_calls: 0, reason: 'refund_already_confirmed' } }];"
+      },
+      "notes": "【역할】 다른 request_id로 다시 확인해도 티켓을 또 만들지 않는다.\n【입력】 확정 유효 판정의 existing.\n【처리】 티켓이 실제로 남아 있는 것을 확인한 경우에만 온다.\n【출력】 {route:\"담당자 이관\", ticket:{..., duplicate:true}}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "7b55f9e0-dc3b-155a-1d5b-e283abc0385a",
+      "name": "확인 재조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        225
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-payment",
+        "options": {
+          "timeout": 4000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, record_id: $json.record_id, deadline_ms: $json.deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 확정 직전에 본인 건을 다시 조회한다.\n【입력】 {user, record_id}. record_id는 고객 입력이 아니라 서버의 대기 상태에서 온 값이다.\n【처리】 ticketmoa-payment 호출.\n【출력】 {statusCode, body:{status, record}}.\n【실패 시】 실패하면 금액을 확정하지 못한 예외 건으로 이관한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "8cd38601-da06-464e-dc6b-aeaa7d11a173",
+      "name": "확인 재계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        150
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nconst REFUND_APPROVAL_LIMIT = 300000;\nfunction calcRefund(b) {\n  const now = b.now ? new Date(b.now) : new Date();\n  const kstDay = d => { const k = new Date(d.getTime() + 9 * 3600000); return Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); };\n  const day = 86400000;\n  const show = new Date(b.showAt);\n  const booked = new Date(b.bookedAt);\n  const daysToShow = Math.round((kstDay(show) - kstDay(now)) / day);\n  const daysSinceBooked = Math.round((kstDay(now) - kstDay(booked)) / day);\n  const qty = b.qty || 1;\n  const amount = b.amount || 0;\n\n  // 관람일 전날 오후 5시(KST)까지\n  const deadline = new Date(kstDay(show) - day + 17 * 3600000 - 9 * 3600000);\n  if (now > deadline) return { allowed: false, fee: 0, bookingFeeRefund: 0, refund: 0, rule: 'after_deadline', needsApproval: true };\n\n  let fee; let rule;\n  if (daysSinceBooked <= 7 && daysToShow >= 10) { fee = 0; rule = 'within_7_days_of_booking'; }\n  else if (daysToShow >= 10) { fee = Math.min(2000 * qty, Math.floor(amount * 0.1)); rule = 'flat_2000_per_ticket'; }\n  else if (daysToShow >= 7) { fee = Math.floor(amount * 0.1); rule = '9_to_7_days'; }\n  else if (daysToShow >= 3) { fee = Math.floor(amount * 0.2); rule = '6_to_3_days'; }\n  else { fee = Math.floor(amount * 0.3); rule = '2_days_to_day_before'; }\n\n  const bookingFeeRefund = daysSinceBooked === 0 ? 1000 * qty : 0;\n  const refund = amount - fee + bookingFeeRefund;\n  return { allowed: true, fee, bookingFeeRefund, refund, rule, needsApproval: refund > REFUND_APPROVAL_LIMIT };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nfunction parseBooking(rec) {\n  const showText = String(rec.show || '');\n  const dt = showText.match(/(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2})/);\n  const qty = showText.match(/(\\d+)\\s*매/);\n  const booked = String(rec.booking_id || '').match(/^T(\\d{4})(\\d{2})(\\d{2})-\\d+$/);\n  const amount = rec.amount;\n  if (!dt || !qty || !booked || typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || Number(qty[1]) < 1) return null;\n  const showAt = dt[1] + 'T' + dt[2] + ':00+09:00';\n  const bookedAt = booked[1] + '-' + booked[2] + '-' + booked[3] + 'T00:00:00+09:00';\n  if (isNaN(new Date(showAt)) || isNaN(new Date(bookedAt))) return null;\n  return { amount, qty: Number(qty[1]), bookedAt, showAt };\n}\nconst won = n => String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + '원';\n\nconst s = $('확인 자격 판정').first().json;\nconst r = readHttp($json);\nconst sources = s.pending.sources || [];\nconst baseHo = reason => ({ reason, category: 'refund_exception', priority: 'normal', sources,\n  answer: '확정 전에 예매 상태를 다시 확인한 결과 상담원 확인이 필요합니다. 금액은 상담원이 확인합니다.',\n  summary: '환불 확인 요청 (' + s.record_id + '). 사유: ' + reason + '. 다음 조치: 상담원이 금액과 규정을 다시 확인.' });\nif (!r.ok || !r.body.status || r.body.status === 'error') return [{ json: { ...s, recheck: 'handoff', ho: baseHo('recheck_failed') } }];\nif (r.body.status !== 'ok') return [{ json: { ...s, recheck: 'not_owner' } }];\nconst booking = parseBooking(r.body.record || {});\nif (!booking) return [{ json: { ...s, recheck: 'handoff', ho: baseHo('booking_data_incomplete') } }];\nif (r.body.record.booking_id !== s.pending.booking_id) return [{ json: { ...s, recheck: 'handoff', ho: baseHo('booking_mismatch') } }];\nif (r.body.record.status !== '접수됨') return [{ json: { ...s, recheck: 'handoff', ho: baseHo('record_not_open') } }];\nconst calc = calcRefund(booking);\nif (!calc.allowed || calc.needsApproval) return [{ json: { ...s, recheck: 'handoff', ho: baseHo(calc.allowed ? 'over_limit' : 'after_deadline') } }];\nif (calc.refund !== s.pending.refund) {\n  return [{ json: { ...s, recheck: 'requote', calc, record: r.body.record, masked: r.body.masked || 0, new_pending: { ...s.pending, refund: calc.refund, fee: calc.fee, rule: calc.rule, quoted_at: new Date().toISOString() } } }];\n}\nreturn [{ json: { ...s, recheck: 'handoff', confirmed: true, ho: { reason: 'refund_confirmed', category: 'refund', priority: 'normal', sources,\n  answer: '환불 예정 금액은 ' + won(calc.refund) + '입니다. 실제 취소와 환불은 상담원이 처리합니다.',\n  summary: '고객이 환불을 확정함. 문의 ' + s.record_id + ', 예매 ' + s.booking_id + ', 환불 예정 ' + won(calc.refund) + ', 수수료 ' + won(calc.fee) + ' (' + calc.rule + '). 다음 조치: 상담원이 취소와 환불을 실행.' } } }];"
+      },
+      "notes": "【역할】 확정 시점 기준으로 금액을 다시 계산한다.\n【입력】 확인 재조회 응답, 대기 상태.\n【처리】 안내 뒤 시간이 지나 수수료 구간이 바뀌었으면 티켓 없이 새 금액을 다시 안내한다. 그사이 시한이 지났거나, 금액이 30만원을 넘거나, 예매번호가 달라졌거나, 기록 상태가 바뀌었으면 예외 건으로 이관한다. 모두 같을 때만 고객이 확인한 요청으로 접수한다.\n【출력】 {recheck:\"handoff|requote|not_owner\", ho?, confirmed?, ...}.\n【실패 시】 재조회 실패는 category refund_exception으로 이관한다. \"확인된 환불 요청\"으로 표시하지 않는다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a0b0848d-f6da-ba2d-0b01-f62916e3742b",
+      "name": "재계산 분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2400,
+        75
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.recheck }}",
+                    "rightValue": "handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "handoff"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.recheck }}",
+                    "rightValue": "requote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "requote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.recheck }}",
+                    "rightValue": "not_owner",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not_owner"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "예상 밖"
+        }
+      },
+      "notes": "【역할】 재계산 결과에 따라 나눈다.\n【입력】 recheck.\n【출력】 handoff: 이관 준비. requote: 금액 다시 저장. not_owner: 남의 건 답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "1557a55d-b477-d957-1f61-9c4fdc548d74",
+      "name": "금액 다시 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2700,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.new_pending, ttl: 1800 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 바뀐 금액으로 대기 상태를 고친다.\n【입력】 {new_pending, pending_key}.\n【처리】 다음 확인은 새 금액과 비교한다.\n【출력】 {statusCode, body}.\n【실패 시】 저장 실패 시 다음 확인에서 금액이 달라 다시 안내하게 되므로 안전하다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "ecad3a96-ace0-db53-8680-3c2011c0709f",
+      "name": "금액 변경 안내",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst s = $('확인 재계산').first().json;\nconst won = n => String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',') + '원';\nreturn [{ json: { route: '자동 답변', answer: '취소 시점이 달라져 환불 예정 금액이 ' + won(s.calc.refund) + '(수수료 ' + won(s.calc.fee) + ')로 바뀌었습니다. 이 금액으로 확정하시겠어요?', sources: s.pending.sources || [], ticket: null, pending_action: { type: 'refund_request', booking_id: s.booking_id }, masked: s.masked || 0, llm_calls: 0, reason: 'refund_requote' } }];"
+      },
+      "notes": "【역할】 바뀐 금액을 알리고 다시 확인받는다.\n【입력】 확인 재계산 결과.\n【출력】 {route:\"자동 답변\", ticket:null, pending_action}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "00954499-830d-011b-ca69-fb90b0739036",
+      "name": "대기 해제",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: { ...$json.pending, status: 'cancelled' }, ttl: 1800 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 고객이 확정하지 않겠다고 하면 대기 상태를 끝낸다.\n【입력】 {pending, pending_key}.\n【처리】 이후 confirm=true가 와도 다시 안내를 받아야 한다.\n【출력】 {statusCode, body}.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "92bcdbd4-c541-cd80-c030-69e0c16e6bac",
+      "name": "철회 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { route: '자동 답변', answer: '알겠습니다. 취소되지 않았고 예매는 그대로 유지됩니다.', sources: $('확인 자격 판정').first().json.pending.sources || [], ticket: null, pending_action: null, masked: 0, llm_calls: 0, reason: $json.statusCode === 200 ? 'refund_declined' : 'refund_declined:store_failed' } }];"
+      },
+      "notes": "【역할】 철회를 안내한다. 아무것도 만들지 않는다.\n【입력】 대기 해제 결과.\n【처리】 티켓을 만들지 않았으므로 취소되지 않았다는 말은 저장 실패와 무관하게 사실이다. 저장에 실패하면 reason에 남긴다.\n【출력】 {route:\"자동 답변\", ticket:null, reason:\"refund_declined\"}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "511a0dc3-188d-d948-da52-13c01148c105",
+      "name": "이관 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        225
+      ],
+      "parameters": {
+        "jsCode": "\nconst j = $json;\nconst ho = j.ho || { reason: 'lookup_failed', category: 'refund_exception', priority: 'normal', sources: [],\n  answer: '예매 정보를 확인하지 못해 상담원에게 전달합니다.',\n  summary: '환불 문의 (' + (j.record_id || '번호 미상') + '). 사유: 조회 실패. 다음 조치: 상담원이 기록을 직접 확인.' };\nreturn [{ json: { ...j, ho } }];"
+      },
+      "notes": "【역할】 이관에 필요한 내용을 한 모양으로 맞춘다.\n【입력】 조회 실패, 금액 계산, 재계산 중 하나의 결과.\n【출력】 {ho:{reason, category, priority, sources, answer, summary}, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "cf417698-2d7c-1466-c254-f01cb109baf5",
+      "name": "환불 이관 호출",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3000,
+        150
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/webhook/ticketmoa-handoff",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ request_id: $json.request_id, user: $json.user, summary: $json.ho.summary, category: $json.ho.category, priority: $json.ho.priority, alert: null, deadline_ms: $json.deadline_ms }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 상담원 티켓을 만든다. 실제 취소는 상담원이 한다.\n【입력】 {request_id, user, ho}.\n【처리】 ticketmoa-handoff를 부른다. 본체는 이 티켓을 다시 만들지 않는다.\n【출력】 {statusCode, body:{ticket, duplicate, dlq, alert, masked}}.\n【실패 시】 호출 실패는 ticket:null로 처리한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "1ff41ec7-ccc9-04bb-f601-3f934f506292",
+      "name": "이관 결과 읽기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        75
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst s = $('이관 준비').first().json;\nconst r = readHttp($json);\nconst ticket = r.ok && r.body.ticket ? r.body.ticket : null;\nreturn [{ json: { ...s, ticket, handoff_ok: r.ok, dlq: r.ok && r.body.dlq === true, handoff_masked: r.ok ? (r.body.masked || 0) : 0, handoff_retries: r.ok ? (r.body.retries || 0) : 0, handoff_reason: r.ok ? (r.body.reason || '') : 'handoff_unavailable', mark_confirmed: !!(s.confirmed && ticket) } }];"
+      },
+      "notes": "【역할】 이관 결과를 정리한다.\n【입력】 환불 이관 호출 응답, 이관 준비.\n【출력】 {ticket, handoff_ok, dlq, handoff_reason, mark_confirmed, ...}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "4c97b2a8-9e9b-155f-30fa-47f815a4e484",
+      "name": "확정 표시 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3600,
+        75
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.mark_confirmed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "【역할】 고객 확인 요청이 티켓까지 갔을 때만 확정으로 표시한다.\n【입력】 mark_confirmed.\n【처리】 티켓이 실패하면 대기 상태를 남겨 다시 시도할 수 있게 한다.\n【출력】 참: 확정 저장. 거짓: 이관 답.",
+      "notesInFlow": false
+    },
+    {
+      "id": "b6e70157-8d70-2003-9ee4-5bdacbf99eba",
+      "name": "확정 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3900,
+        75
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/cache/{{ $json.pending_key }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: { ...$json.pending, status: 'confirmed', ticket: $json.ticket }, ttl: 86400 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 이 환불 요청이 접수됐음을 기록한다.\n【입력】 {pending, ticket, pending_key}.\n【처리】 다른 request_id의 재확인이 티켓을 또 만들지 못하게 한다. 현 API에는 원자적 소비가 없어 동시 확인까지 막지는 못한다.\n【출력】 {statusCode, body}.\n【실패 시】 실패해도 고객 응답은 막지 않는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "60e72b05-5376-287d-ce86-f6a8889e251d",
+      "name": "이관 답",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4200,
+        75
+      ],
+      "parameters": {
+        "jsCode": "\nconst s = $('이관 결과 읽기').first().json;\nconst saved = $('확정 저장').isExecuted ? $('확정 저장').all(0).some(i => i.json.statusCode === 200) : true;\nlet tail;\nif (s.ticket) tail = ' 상담원에게 접수했습니다. 접수 번호는 ' + s.ticket.id + '입니다.';\nelse if (!s.handoff_ok) tail = ' 접수 결과를 지금 확인하지 못했습니다. 잠시 뒤 같은 요청으로 다시 확인해 주세요.';\nelse if (s.dlq) tail = ' 접수 시스템이 지연되어 아직 접수되지 않았고, 요청을 대기열에 보관했습니다. 처리되면 안내드립니다.';\nelse tail = ' 접수 시스템 장애로 아직 접수되지 않았습니다. 잠시 뒤 다시 요청해 주세요.';\nif (!saved) s.handoff_reason = [s.handoff_reason, 'confirm_store_failed'].filter(Boolean).join(',');\nreturn [{ json: { route: '담당자 이관', answer: s.ho.answer + tail, sources: s.ho.sources || [], ticket: s.ticket, pending_action: null, masked: (s.masked || 0) + (s.handoff_masked || 0), llm_calls: 0, retries: s.handoff_retries || 0, reason: s.ho.reason + (s.handoff_reason ? ':' + s.handoff_reason : '') } }];"
+      },
+      "notes": "【역할】 이관 결과를 고객 답으로 만든다.\n【입력】 이관 결과 읽기.\n【처리】 티켓, 대기열, 호출 실패를 구분해 실제 결과만 말한다. 확정 저장에 실패하면 reason에 남긴다: 이 경우 다른 request_id의 재확인이 티켓을 또 만들 수 있으며 현 API로는 막지 못한다.\n【출력】 {route:\"담당자 이관\", answer, sources, ticket, reason}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "32fdb13b-966e-37fb-fc1e-41a56e5263d8",
+      "name": "환불 처리 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5100,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "notes": "【역할】 처리 결과를 본체에 돌려준다.\n【입력】 답 노드들 중 하나.\n【출력】 HTTP 200 JSON. {route, answer, sources, ticket, pending_action, masked, llm_calls, reason}.",
+      "notesInFlow": false
+    }
+  ],
+  "connections": {
+    "환불 요청 수신": {
+      "main": [
+        [
+          {
+            "node": "요청 단계 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "요청 단계 판정": {
+      "main": [
+        [
+          {
+            "node": "단계 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "단계 분기": {
+      "main": [
+        [
+          {
+            "node": "예매 조회 호출",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "대기 상태 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "예매 조회 호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "예매 조회 호출": {
+      "main": [
+        [
+          {
+            "node": "조회 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "조회 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "조회 결과 읽기": {
+      "main": [
+        [
+          {
+            "node": "조회 결과 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "조회 결과 분기": {
+      "main": [
+        [
+          {
+            "node": "환불 규정 검색",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "남의 건 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "번호 재확인 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 규정 검색": {
+      "main": [
+        [
+          {
+            "node": "환불 금액 계산",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "환불 금액 계산",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 금액 계산": {
+      "main": [
+        [
+          {
+            "node": "계산 결과 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "계산 결과 분기": {
+      "main": [
+        [
+          {
+            "node": "기존 확정 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기존 확정 조회": {
+      "main": [
+        [
+          {
+            "node": "기존 확정 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "기존 확정 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기존 확정 판정": {
+      "main": [
+        [
+          {
+            "node": "확정 이력 있음?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확정 이력 있음?": {
+      "main": [
+        [
+          {
+            "node": "생성 티켓 확인",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "대기 상태 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "생성 티켓 확인": {
+      "main": [
+        [
+          {
+            "node": "확정 유효 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "확정 유효 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확정 유효 판정": {
+      "main": [
+        [
+          {
+            "node": "확정 유효 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확정 유효 분기": {
+      "main": [
+        [
+          {
+            "node": "기존 티켓 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "대기 상태 저장",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "안내 먼저 받기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "기존 티켓 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "대기 상태 저장": {
+      "main": [
+        [
+          {
+            "node": "금액 안내 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "금액 안내 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "대기 상태 읽기": {
+      "main": [
+        [
+          {
+            "node": "확인 자격 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "확인 자격 판정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확인 자격 판정": {
+      "main": [
+        [
+          {
+            "node": "확인 단계 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확인 단계 분기": {
+      "main": [
+        [
+          {
+            "node": "안내 먼저 받기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "생성 티켓 확인",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "확인 재조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "대기 해제",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "안내 먼저 받기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확인 재조회": {
+      "main": [
+        [
+          {
+            "node": "확인 재계산",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "확인 재계산",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확인 재계산": {
+      "main": [
+        [
+          {
+            "node": "재계산 분기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "재계산 분기": {
+      "main": [
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "금액 다시 저장",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "남의 건 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "금액 다시 저장": {
+      "main": [
+        [
+          {
+            "node": "금액 변경 안내",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "금액 변경 안내",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "대기 해제": {
+      "main": [
+        [
+          {
+            "node": "철회 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "철회 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 준비": {
+      "main": [
+        [
+          {
+            "node": "환불 이관 호출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "환불 이관 호출": {
+      "main": [
+        [
+          {
+            "node": "이관 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 결과 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 결과 읽기": {
+      "main": [
+        [
+          {
+            "node": "확정 표시 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확정 표시 필요?": {
+      "main": [
+        [
+          {
+            "node": "확정 저장",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "확정 저장": {
+      "main": [
+        [
+          {
+            "node": "이관 답",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "이관 답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "금액 안내 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "남의 건 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "번호 재확인 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "안내 먼저 받기": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기존 티켓 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "금액 변경 안내": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "철회 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 답": {
+      "main": [
+        [
+          {
+            "node": "환불 처리 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ticketmoaErrors01"
+  },
+  "active": false,
+  "meta": {
+    "owner": "B 오케스트레이션 (최강현)",
+    "purpose": "환불 금액을 안내하고, 고객 확인을 서버 상태와 대조한 뒤 상담원 티켓으로 넘긴다. 취소·결제 취소를 직접 실행하는 노드는 없다.",
+    "reference": "Last3Mon/66/reference/lab03-example1-check.json (규칙 분기), 76/reference/lab02-example1-dlq.json (티켓)",
+    "scenarios": "TM-02, TM-03, TM-06"
+  }
+}

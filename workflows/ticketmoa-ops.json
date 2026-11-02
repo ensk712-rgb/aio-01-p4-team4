@@ -1,0 +1,279 @@
+{
+  "id": "ticketmoaOps00001",
+  "name": "ticketmoa-ops",
+  "nodes": [
+    {
+      "id": "cc412d7d-04dc-29fb-976b-aa81e08e2b10",
+      "name": "운영 질문 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticketmoa-ops",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "【역할】 운영자의 지표 요청을 받는다.\n【입력】 {from?, to?}. 날짜는 YYYY-MM-DD.\n【처리】 팀 키가 있어야 호출할 수 있다.\n【출력】 요청 항목 1개.",
+      "notesInFlow": false,
+      "webhookId": "b6378a54-aa05-7281-ef3b-842ae343f77b",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "23637474-ecc7-6260-967d-260d711d2826",
+      "name": "기간 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst b = $input.first().json.body || {};\nconst today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);\nconst valid = d => { if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(d || ''))) return false; const t = new Date(d + 'T00:00:00Z'); return !isNaN(t) && t.getUTCFullYear() >= 2000 && t.toISOString().slice(0, 10) === d; };\nconst from = valid(b.from) ? b.from : today;\nconst to = valid(b.to) && (!valid(b.from) || b.from <= b.to) ? b.to : (valid(b.from) ? from : today);\n// 기록의 started_at은 UTC라서 한국 날짜 d의 기록은 UTC 날짜 d-1 또는 d에 있다. 하루 넓게 읽고 계산 때 한국 날짜로 거른다.\nconst query_from = new Date(new Date(from + 'T00:00:00Z').getTime() - 86400000).toISOString().slice(0, 10);\nreturn [{ json: { from, to, query_from } }];"
+      },
+      "notes": "【역할】 집계 기간을 정한다.\n【입력】 {from?, to?}.\n【처리】 값이 없거나 실제 달력 날짜가 아니면(2000년 이전 포함) 한국 시간 오늘로 한다. 잘못된 날짜로 예외가 나지 않아 항상 200으로 답한다. to가 from보다 앞이면 from과 같게 한다.\n【출력】 {from, to, query_from}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "c6b00343-06e2-c42b-a69a-e49ca8731023",
+      "name": "실행 기록 읽기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800/logs?source=live&from={{ $json.query_from }}&to={{ $json.to }}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 기간 안의 실시간 실행 기록을 읽는다.\n【입력】 {from, to}.\n【처리】 GET /logs. 질문 원문과 연락처는 기록에 없다.\n【출력】 {logs:[...]}.\n【실패 시】 실패는 지표 계산에서 partial로 표시한다. 0으로 위장하지 않는다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "83378500-97bc-214e-a6a4-52f69be38ac7",
+      "name": "생성 티켓 읽기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/tickets-created",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 만들어진 티켓 수를 읽는다.\n【처리】 GET /tickets-created.\n【출력】 {count, tickets}.\n【실패 시】 실패는 partial로 표시한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "709f6227-c5a6-7c6e-1829-96b6e575e4eb",
+      "name": "DLQ 읽기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "url": "http://data-api:8800/dlq",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 실패 대기열 크기를 읽는다.\n【처리】 GET /dlq.\n【출력】 {size, items}.\n【실패 시】 실패는 partial로 표시한다.",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "9d4284b9-7c39-15bd-4362-be326d3cc51a",
+      "name": "지표 계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst read = n => { const a = $(n).all(0); return a.length ? readHttp(a[0].json) : { ok: false, body: {} }; };\nconst logsR = read('실행 기록 읽기');\nconst ticketsR = read('생성 티켓 읽기');\nconst dlqR = read('DLQ 읽기');\nconst partial = [['logs', logsR], ['tickets', ticketsR], ['dlq', dlqR]].filter(([, r]) => !r.ok).map(([n]) => n);\nconst period = $('기간 정리').first().json;\nconst logsOk = logsR.ok && Array.isArray(logsR.body.logs);\nconst kstDay = v => { const t = String(v || ''); const d = new Date(/Z|[+-]\\d{2}:\\d{2}$/.test(t) ? t : t + '+09:00'); return isNaN(d) ? '' : new Date(d.getTime() + 9 * 3600000).toISOString().slice(0, 10); };\nconst logs = logsOk ? logsR.body.logs.filter(l => { const k = kstDay(l.started_at); return k >= period.from && k <= period.to; }) : [];\nconst byRoute = {};\nfor (const l of logs) byRoute[l.route] = (byRoute[l.route] || 0) + 1;\nconst handoff = byRoute['담당자 이관'] || 0;\nconst steps = {};\nfor (const l of logs) for (const [k, v] of Object.entries(l.timings || {})) if (typeof v === 'number' && k !== 'total_ms') (steps[k] ||= []).push(v);\nconst pct = (vals, p) => { const s = [...vals].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.ceil(p * s.length) - 1)] : null; };\nconst stepStats = Object.fromEntries(Object.entries(steps).map(([k, v]) => [k, { p50: pct(v, 0.5), p95: pct(v, 0.95), n: v.length }]));\nconst slowest = Object.entries(stepStats).sort((a, b) => (b[1].p95 || 0) - (a[1].p95 || 0))[0];\nconst handoffRate = logs.length ? Math.round((handoff / logs.length) * 1000) / 1000 : null;\nconst answer = !logsOk ? '실행 기록을 읽지 못해 이관 비율을 계산하지 못했습니다.' : logs.length\n  ? '전체 ' + logs.length + '건 중 이관 ' + handoff + '건(' + Math.round(handoffRate * 100) + '%)입니다. 가장 느린 구간은 ' + (slowest ? slowest[0] + ' (p95 ' + slowest[1].p95 + 'ms)' : '측정값 없음') + '이고 DLQ는 ' + (dlqR.ok ? (dlqR.body.size ?? 0) + '건' : '확인 실패') + '입니다.'\n  : '기록된 실행이 없습니다.';\nreturn [{ json: { period, total: logsOk ? logs.length : null, by_route: logsOk ? byRoute : null, handoff_rate: handoffRate, steps: stepStats, dlq_size_now: dlqR.ok ? (dlqR.body.size ?? 0) : null, tickets_created_now: ticketsR.ok ? (ticketsR.body.count ?? 0) : null, partial, answer } }];"
+      },
+      "notes": "【역할】 이관 비율, 구간별 p50·p95, DLQ 건수를 계산한다.\n【입력】 세 조회 결과.\n【처리】 기록을 한국 날짜로 다시 거른다. 비율과 백분위는 코드로 계산한다. LLM을 쓰지 않아 숫자가 달라지지 않는다. 읽지 못한 값은 null로 두고 partial에 적는다.\n【출력】 {period, total, by_route, handoff_rate, steps, dlq_size_now, tickets_created_now, partial, answer}. 뒤에 _now가 붙은 값은 기간과 무관한 현재 값이다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a0e09c7c-984a-068b-f0e0-0dc2eedc1ee0",
+      "name": "운영 지표 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1800,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "notes": "【역할】 지표를 돌려준다.\n【입력】 지표 계산.\n【출력】 HTTP 200 JSON.",
+      "notesInFlow": false
+    }
+  ],
+  "connections": {
+    "운영 질문 수신": {
+      "main": [
+        [
+          {
+            "node": "기간 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기간 정리": {
+      "main": [
+        [
+          {
+            "node": "실행 기록 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "실행 기록 읽기": {
+      "main": [
+        [
+          {
+            "node": "생성 티켓 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "생성 티켓 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "생성 티켓 읽기": {
+      "main": [
+        [
+          {
+            "node": "DLQ 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DLQ 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DLQ 읽기": {
+      "main": [
+        [
+          {
+            "node": "지표 계산",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "지표 계산",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지표 계산": {
+      "main": [
+        [
+          {
+            "node": "운영 지표 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ticketmoaErrors01"
+  },
+  "active": false,
+  "meta": {
+    "owner": "D 심환석 (가산, 필수 통과 뒤에만)",
+    "purpose": "오늘 이관 비율, 가장 느린 구간, DLQ 건수를 숫자로 답한다. 읽기 전용이며 숫자는 규칙으로 계산한다.",
+    "reference": "Last3Mon/77/reference/lab01-example2-report.json",
+    "scenarios": "가산"
+  }
+}

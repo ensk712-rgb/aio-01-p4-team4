@@ -1,0 +1,47 @@
+name: ticketmoa-verify
+services:
+  n8n:
+    image: n8nio/n8n:2.42.6
+    ports: ["127.0.0.1:5699:5678"]
+    environment:
+      TZ: KST-9
+      GENERIC_TIMEZONE: Asia/Seoul
+      N8N_ENCRYPTION_KEY: ticketmoa-verify-fake-encryption-key-only
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ../../../workflows:/verify-workflows:ro
+      - ./credentials.json.example:/verify-credentials.json:ro
+    networks: [verify, edge]
+    depends_on: [data-api, mock-openai]
+  data-api:
+    image: python:3.12-slim
+    command: ["python", "/app/server.py"]
+    environment: {TZ: KST-9, DATA_DIR: /data, PORT: "8800", PYTHONDONTWRITEBYTECODE: "1"}
+    ports: ["127.0.0.1:8899:8800"]
+    volumes:
+      - ../../../../aio-01d4-stu/Last3Mon/77/data-api/server.py:/app/server.py:ro
+      - ./runtime-data:/data:ro
+    networks:
+      verify:
+        aliases: [data-api]
+      edge: {}
+  mock-openai:
+    image: python:3.12-slim
+    command: ["python", "/app/mock_openai.py"]
+    environment: {TZ: KST-9, PORT: "8898", PYTHONDONTWRITEBYTECODE: "1"}
+    ports: ["127.0.0.1:8898:8898"]
+    volumes:
+      - ./mock_openai.py:/app/mock_openai.py:ro
+      - ../../../config/registry.json:/app/registry.json:ro
+    networks: [verify, edge]
+networks:
+  verify:
+    internal: true
+  edge: {}   # Docker Desktop은 internal 네트워크만 있는 컨테이너의 포트를 게시하지 못한다. 포트 게시 전용.
+volumes:
+  n8n-data:
