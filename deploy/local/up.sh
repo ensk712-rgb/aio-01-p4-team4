@@ -32,7 +32,8 @@ mkdir -p tools/data-api && cp "$KIT/server.py" tools/data-api/server.py
 rm -rf tools/data-api/data && mkdir -p tools/data-api/data && cp -R "$KIT/data/." tools/data-api/data/
 cp data/users.json tools/data-api/data/employees.json && cp data/records.json tools/data-api/data/tickets.json
 rm -rf tools/data-api/data/docs && mkdir -p tools/data-api/data/docs && cp knowledge/*.md tools/data-api/data/docs/
-docker compose -p ticketmoa-data -f deploy/server/compose.data-api.yml up -d 2>&1 | tail -1
+# data/ 를 지우고 다시 만들었으므로 떠 있던 컨테이너는 옛 폴더를 본다. 다시 만들어 새 바인드 마운트를 잡는다.
+docker compose -p ticketmoa-data -f deploy/server/compose.data-api.yml up -d --force-recreate 2>&1 | tail -1
 for i in $(seq 1 30); do curl -sf -m 2 localhost:8800/health >/dev/null && break; sleep 1; done
 echo "  호스트 $(curl -s -m 2 localhost:8800/health) / n8n에서 $(docker exec "$N8N" wget -qO- -T 3 http://data-api:8800/health 2>&1 || echo FAIL)"
 
@@ -92,6 +93,7 @@ docker exec -u root "$N8N" rm -rf /tmp/tm-wf
 smoke() { curl -s -m 20 -o /dev/null -w '%{http_code}' -X POST localhost:5678/webhook/ticketmoa-support -H "X-Team-Key: $TM_TEAM_KEY" -H 'Content-Type: application/json' -d '{"request_id":"local-smoke","user":"김하늘","channel":"web","question":""}'; }
 for i in $(seq 1 60); do code=$(smoke); [[ "$code" == 400 ]] && break; sleep 2; done
 echo "  smoke(빈 질문→400): $code"
+[[ "$code" == 400 ]] || { echo "smoke 실패: 빈 질문이 400이 아니다 (데이터 API·워크플로우 확인)" >&2; exit 1; }
 
 say "색인"
 python3 deploy/server/run-cases.py --index | tail -2
