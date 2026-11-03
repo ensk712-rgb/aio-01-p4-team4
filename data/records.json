@@ -73,5 +73,20 @@
       "phone": "010-0000-3307",
       "email": "doyoon.lee@example.com"
     }
+  },
+  "C-2006": {
+    "title": "콘서트 예매 취소 문의",
+    "requester": "정민아",
+    "status": "접수됨",
+    "assignee": "미정",
+    "updated": "2026-11-04",
+    "booking_id": "T20261020-0577",
+    "show": "콘서트 〈한밤의 파도〉 2026-12-05 19:00 VIP석 4매",
+    "amount": 352000,
+    "note": "4매 전체 취소 문의. 환불액이 30만원을 넘어 상담원 승인이 필요합니다.",
+    "contact": {
+      "phone": "010-0000-4821",
+      "email": "mina.jung@example.com"
+    }
   }
 }

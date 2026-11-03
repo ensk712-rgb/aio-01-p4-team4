@@ -1,6 +1,6 @@
 # 티켓모아 구현 순서와 역할 분담 (팀 공유용)
 
-2026-10-29 · 팀원 5명 · 마감 11/09(월) 13:50
+2026-10-29 · 팀원 5명 · 마감 11/09(월) 14:50
 함께 볼 것: 기획서 수정본(.docx), `TODO.md`(교시별 일정), `cases/README.md`(시나리오)
 
 ## 한눈에 보기
@@ -18,7 +18,7 @@
 | 역할 | 맡는 파일 | 맡는 데이터·문서 | 책임지는 시나리오 |
 | --- | --- | --- | --- |
 | **A 리드·통합**<br>최두나 | `ticketmoa-support` (본체: Webhook, 입력 검사, 주입 차단, 라우팅, 응답) | 레지스트리 JSON, 주제 제안서, 헌장, README, 데일리, 발표 | WF-08, WF-13, 전체 통합 |
-| **B 오케스트레이션**<br>최강현 | `ticketmoa-agents` (Supervisor 분류, 보완 질문, 검증 Agent), `ticketmoa-refund` | 분류 프롬프트, 워크플로우 설계서 2~4절 | WF-02, 02b, TM-02, 03, 06 |
+| **B 오케스트레이션**<br>최강현 | `ticketmoa-agents` (Supervisor 분류, 보완 질문, 검증 Agent), `ticketmoa-refund` | 분류 프롬프트, 워크플로우 설계서 2~4절 | WF-02, 02b, TM-02, 03, 06, 13 |
 | **C RAG**<br>정예진 | `ticketmoa-index`, `ticketmoa-search`, `ticketmoa-tech` | `knowledge/` 8개, RAG 설계서 전체 | WF-01, 03, 05, 12, TM-01, 07, 08 |
 | **D 연동·안정성**<br>심환석 | `ticketmoa-payment`, `ticketmoa-handoff`, `ticketmoa-errors` | `data/users.json`, `records.json`, 워크플로우 설계서 5~7절 | WF-04, 06, 07, 09, 10, 11, TM-05, (가산) TM-09~12 |
 | **E 시험·품질**<br>김인혜 | (워크플로우 없음) | `cases/`, `requests/`, `runs/`, 실행 결과서 | 모든 시나리오 실행·기록, 81일차부터 D의 Error Workflow 같이 보기 |
@@ -55,7 +55,7 @@ route: 자동 답변 | 보완 질문 | 담당자 이관 | 권한 없음 | 차단
 
 모든 하위 웹훅은 실패해도 **200 + `{"error": "..."}`** 로 돌려주고, 본체는 HTTP Request에 timeout(예: 5초)을 두고 실패하면 이관으로 간다.
 
-**끝 표시**: 위 표를 저장소 `docs/WORKFLOW-DESIGN.md` 3절에 붙여 넣고 모두 확인.
+**끝 표시**: 위 표를 다섯 명이 모두 확인 (바꾸면 이 표부터 고친다. 설계서 3절은 구현 뒤 이 표로 쓴다).
 
 ## 2단계 · 가짜로 끝까지 이어 놓기 (80일차 5교시)
 
@@ -98,7 +98,7 @@ route: 자동 답변 | 보완 질문 | 담당자 이관 | 권한 없음 | 차단
 | 시각 | A | B | C | D | E |
 | --- | --- | --- | --- | --- | --- |
 | ~11:00 | 마지막 버그 수정 승인 | 프롬프트 안정화 | 색인 재생성 확인 | 장애 시나리오 재확인 | 전체 시험 `--repeat 3`, `bench` |
-| 11:00~13:50 | README, 최종 병합, `tscan`, **제출** | 설계서 2~4절 | RAG 설계서 (잰 값) | 설계서 5~7절 | 결과서 (실패 사례 2건+) |
+| 11:00~14:50 | README, 최종 병합, `tscan`, **제출** | 설계서 2~4절 | RAG 설계서 (잰 값) | 설계서 5~7절 | 결과서 (실패 사례 2건+) |
 | 14:00~ | 발표 진행 | 시연 보조 | 시연 보조 | 시연 보조 | 시연 (리드 노트북) |
 
 ## 남은 수업을 어디에 쓰나
@@ -126,4 +126,4 @@ git add workflows/ticketmoa-<내파일>.json && git commit -m "무엇 · common 
 
 다른 사람 작업을 내 n8n에서 보려면 `git pull` 후 `uv run tools/flow.py push workflows/*.json`, 색인은 `ticketmoa-index`를 한 번 다시 돌린다.
 
-> `flow.py`의 정확한 하위 명령 이름은 80일차 키트의 README로 확인한다 (위는 72·73일차 기준).
+> `flow.py`는 저장소의 `tools/flow.py`를 쓴다 (78일차 `flow.py` + `X-Team-Key`). 키는 `FLOW_WEBHOOK_KEY` 환경 변수로만.

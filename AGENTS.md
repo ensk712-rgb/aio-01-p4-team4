@@ -23,7 +23,7 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 잘못된 입력(빈 질문·없는 사용자·501자 이상): HTTP 400 {"error":"invalid request","codes":[...]}
 ```
 
-하위 웹훅끼리 주고받는 모양은 `docs/WORKFLOW-DESIGN.md` 3절의 표를 따른다 (이 문서를 쓰기 전에는 `docs/IMPLEMENTATION-PLAN.md` 1단계의 표). 하위 웹훅은 실패해도 HTTP 200 + `{"error": "..."}`로 돌려준다.
+하위 웹훅끼리 주고받는 모양은 `docs/IMPLEMENTATION-PLAN.md` 1단계의 하위 웹훅 표를 따른다 (설계서는 구현 뒤에 이 표로 쓴다). 하위 웹훅은 실패해도 HTTP 200 + `{"error": "..."}`로 돌려준다.
 
 ## 4. 파일 담당 (한 사람 = 한 파일)
 
@@ -49,11 +49,12 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 - 재시도는 429·5xx·timeout만 한다. 401·403은 재시도하지 않는다.
 - 티켓 생성 `key`에는 `request_id`를 넣는다 (중복 방지).
 - Code 노드의 공통 처리(입력 검사, 주입 차단, 가림, 응답 조립, 재시도 판단, 환불 계산, 로그)는 **`lib/common.js`의 함수를 그대로 복사해 쓴다.** 노드 안에서 새로 짜지 않는다. 함수를 고쳐야 하면 `lib/common.js`를 고치고 `node --test lib/test/*.test.js`를 통과시킨다.
+- OpenAI 노드는 모두 Credential `OpenAI (.env)`를 쓴다. 다른 이름으로 새로 만들면 `flow.py llm down`(WF-10)이 그 노드를 못 끈다.
 - 환불·결제 취소를 에이전트가 직접 실행하지 않는다. 고객 확인(`context.confirm=true`) 뒤 티켓으로 넘긴다.
 
 ## 6. 절대 하지 않는 것
 
-- API 키·토큰을 워크플로우 JSON, 문서, 코드, 커밋에 넣는 것. 키는 n8n Credential에만 있다 (이름: `OpenAI`, `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key))
+- API 키·토큰을 워크플로우 JSON, 문서, 코드, 커밋에 넣는 것. 키는 n8n Credential에만 있다 (이름: `OpenAI (.env)`(id `openAiCourse0001`, `Last3Mon/65/n8n/register-credentials.sh`로 등록), `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key))
 - 실제 사람의 이름·연락처를 쓰는 것. 가짜 데이터는 `010-0000-xxxx`, `@example.com`
 - 응답·로그에 연락처 원문을 남기는 것 (가린 개수는 `security.masked`)
 - `cases/common.json`의 기대 결과를 결과에 맞춰 고치는 것
@@ -69,7 +70,7 @@ ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflo
 git commit -m "<무엇> · common N/14"
 ```
 
-`tools/flow.py`와 데이터 API는 과정 키트(`Last3Mon/80`, 그 전에는 `Last3Mon/73`)에 있고 저장소에는 없다. 서버에 없으면 `flow.py` 명령이 실패하므로 리드에게 알린다. `flow.py` 하위 명령 이름은 80일차 키트 README를 따른다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
+`flow.py`는 저장소의 `tools/flow.py`(78일차 `flow.py`를 부르고 `FLOW_WEBHOOK_KEY`를 `X-Team-Key`로 붙임)를 저장소 뿌리에서 쓴다. 78 원본이 다른 곳에 있으면 `FLOW_PY`로 경로를 준다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
 
 ## 8. 로컬과 서버
 

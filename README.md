@@ -3,7 +3,7 @@
 가상의 티켓 예매 플랫폼 티켓모아의 고객 기술 문의를 자동 분류하고, 지식 문서(RAG)와 예매 조회로 답하며, 필요한 건은 상담원에게 이관하는 n8n 워크플로우.
 
 - 팀: 티켓모아 · 최두나(리드·통합) · 최강현(오케스트레이션) · 정예진(RAG) · 심환석(연동·안정성) · 김인혜(시험·품질)
-- 기간: 2026-11-05 ~ 2026-11-09 (제출 11/09 13:50)
+- 기간: 2026-11-05 ~ 2026-11-09 (제출 11/09 14:50, `main` 마지막 커밋)
 - 스택: n8n 2.42.6, OpenAI gpt-4.1-mini, text-embedding-3-large, In-Memory Vector Store, 연습용 데이터 API
 - 입구: `POST /webhook/ticketmoa-support` (Header `X-Team-Key`)
 
@@ -42,17 +42,17 @@ aio-01-p4-team4/
 │   ├── common.js          # 공통 함수 원본 (Code 노드에 복사해서 씀)
 │   ├── README.md          # 함수 목록·누가 어디서 쓰나
 │   └── test/common.test.js
+├── tools/flow.py          # 78일차 flow.py를 부르고 팀 웹훅에 X-Team-Key를 붙임
 ├── config/registry.json   # 업무 레지스트리 (Supervisor 프롬프트 재료)
 ├── config/ip-policy.json  # 가상 IP 국가·블랙리스트 (가산, TM-10~12)
 ├── knowledge/             # 지식 문서 8개 (staff-entry-manual만 관리자 전용)
 ├── data/                  # users.json 5명, records.json 5건 (가짜 데이터)
-├── cases/                 # common.json(공통 14유형), team.json(팀 12개, TM-09~12는 가산)
+├── cases/                 # common.json(공통 14유형), team.json(팀 13개, TM-09~12는 가산)
 ├── requests/              # 시연·bench용 요청 파일
 ├── runs/                  # 시나리오 보고서 (결과서 증거)
 ├── webapp/                # 시연 웹앱 (상담 콘솔 + 운영), Python 표준 라이브러리만
 ├── deploy/                # 서버 배포 스크립트 (push → setup → doctor → run-cases)
-├── drafts/n8n/            # 워크플로우 생성기(build.mjs)·격리 검증 하네스(verify/)·검토 기록
-└── tools/                 # flow.py·데이터 API (저장소에 없음, 과정 키트에서 서버로 복사)
+└── drafts/n8n/            # 워크플로우 생성기(build.mjs)·격리 검증 하네스(verify/)·검토 기록
 ```
 
 ## 빠른 시작 (MVP)
@@ -84,11 +84,10 @@ ssh -o BatchMode=yes aio-t4 "whoami"   # toor가 나오면 서버 접속 준비 
 **2. 서버에 반영하고 실행**
 
 ```powershell
-scp workflows/<내 파일>.json aio-t4:~/aio-01-p4-team4/workflows/
-ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/<내 파일>.json'"
+scp -r workflows knowledge data cases config lib requests tools aio-t4:~/aio-01-p4-team4/
+ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/*.json'"
 ```
 
-- `tools/flow.py`와 데이터 API는 과정 키트(`Last3Mon/80`, 그 전에는 `Last3Mon/73`)에 있고 저장소에는 없다. 서버에 없으면 위 명령이 실패하므로 리드가 키트에서 먼저 옮긴다.
 - 서버 명령은 꼭 `bash -lc`로 감싼다 (없으면 `uv`를 못 찾는다). PowerShell에서 명령 안에 `$`가 있으면 `` `$ ``로 쓴다.
 - 오래 걸리는 시험은 서버 `tmux` 세션에서 돌린다. 서버 RAM이 2.6GB라 n8n과 같이 쓰므로 무거운 작업 전에 `free -h`를 본다.
 - 서버에서 파일을 직접 고치지 않는다. 다음 `scp` 때 로컬 파일로 덮어써진다.
@@ -112,11 +111,19 @@ git push -u origin feat/<이름>-<파일>
 
 GitHub에서 `main`으로 PR을 열면 리드가 검토하고 병합한다. 병합 뒤에는 `git switch main; git pull`로 최신을 받는다.
 
-**n8n에서 손으로 할 것**: Credential 3개(`OpenAI`, `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key)) 만들기, 워크플로우 활성화, `ticketmoa-index` 한 번 실행. 키 값은 n8n Credentials에만 둔다.
+**n8n에서 손으로 할 것**: Credential 3개(`OpenAI (.env)`(id `openAiCourse0001`, `Last3Mon/65/n8n/register-credentials.sh`로 등록), `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key)) 만들기, 워크플로우 활성화, `ticketmoa-index` 한 번 실행. OpenAI Credential은 새로 만들지 말고 등록 스크립트가 만든 것을 고른다 (WF-10 시험이 이 Credential의 키를 잠깐 깨뜨려 확인한다). 키 값은 n8n Credentials에만 둔다.
 
 ## 시험
 
-서버의 `~/aio-01-p4-team4`에서 실행한다. `tools/flow.py`(80일차 키트)가 서버에 생기면 그쪽 명령으로 바꾼다.
+서버의 `~/aio-01-p4-team4`에서 실행한다.
+
+```bash
+uv run tools/flow.py push workflows/*.json
+FLOW_WEBHOOK_KEY=<팀 키> uv run tools/flow.py test cases/common.json --webhook ticketmoa-support -v
+FLOW_WEBHOOK_KEY=<팀 키> uv run tools/flow.py test cases/team.json -v
+```
+
+MVP 전체 배포·시험(심환석 브랜치, `deploy/`):
 
 ```bash
 bash deploy/server/setup.sh                                   # import·publish·색인
@@ -125,6 +132,8 @@ bash deploy/server/doctor.sh                                  # 상태 점검
 ```
 
 ## 시연 순서 (발표)
+
+조합 A: 팀 VM에서 `flow.py call ticketmoa-support requests/<파일>.json`으로 요청을 보내고 n8n 실행 화면을 함께 보여 준다. 웹 화면(가산)이 준비되면 같은 요청을 화면에서 보낸다. 웹 화면이 안 되면 그대로 `flow.py`로 시연한다.
 
 1. WF-01 QR 문의 → 분류·검색·검증·근거  2. WF-02 보완 질문  3. WF-12 공연 10분 전 QR → 대체 입장 먼저 + 현장 알림
 4. TM-02·03 환불 2단계  5. WF-04 티켓 API 장애 → DLQ·알림  6. `/logs`와 티켓 목록  7. 결과 표·실패 사례

@@ -55,9 +55,9 @@
         "equals": {
           "route": "담당자 이관"
         },
-        "not_contains": {
+        "contains": {
           "ticket": [
-            "null"
+            "T-"
           ]
         }
       }
@@ -75,9 +75,9 @@
           "route": "담당자 이관",
           "sources": []
         },
-        "not_contains": {
+        "contains": {
           "ticket": [
-            "null"
+            "T-"
           ]
         }
       }

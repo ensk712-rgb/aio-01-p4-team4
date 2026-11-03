@@ -63,9 +63,9 @@
         "equals": {
           "route": "담당자 이관"
         },
-        "not_contains": {
+        "contains": {
           "ticket": [
-            "null"
+            "T-"
           ]
         }
       }
@@ -133,6 +133,28 @@
       }
     },
     {
+      "name": "TM-13 환불 30만원 초과 → 이관",
+      "body": {
+        "request_id": "tm13",
+        "user": "정민아",
+        "channel": "web",
+        "question": "다음 달 콘서트 4장 취소하면 얼마 돌려받아요? 문의번호 C-2006"
+      },
+      "expect": {
+        "equals": {
+          "route": "담당자 이관"
+        },
+        "contains": {
+          "sources": [
+            "refund-policy"
+          ],
+          "ticket": [
+            "T-"
+          ]
+        }
+      }
+    },
+    {
       "name": "TM-07 매크로 제한 문의",
       "body": {
         "request_id": "tm07",
@@ -166,9 +188,9 @@
         "equals": {
           "route": "담당자 이관"
         },
-        "not_contains": {
+        "contains": {
           "ticket": [
-            "null"
+            "T-"
           ]
         }
       }
@@ -180,16 +202,71 @@
         "user": "박서준",
         "channel": "web",
         "question": "예매 오픈 언제예요?",
-        "context": {
-          "note": "같은 user로 60초 안에 6번 보낸 뒤의 요청. before에서 5번 보내거나 /cache에 기록을 넣는다"
-        }
+        "context": {}
       },
       "expect": {
         "equals": {
           "route": "차단",
           "security.blocked_by": "rate_limit"
         }
-      }
+      },
+      "before": [
+        {
+          "url": "http://localhost:8800/cache-clear",
+          "body": {}
+        },
+        {
+          "webhook": "ticketmoa-support",
+          "body": {
+            "request_id": "tm09-1",
+            "user": "박서준",
+            "channel": "web",
+            "question": "예매 오픈 언제예요?"
+          }
+        },
+        {
+          "webhook": "ticketmoa-support",
+          "body": {
+            "request_id": "tm09-2",
+            "user": "박서준",
+            "channel": "web",
+            "question": "예매 오픈 언제예요?"
+          }
+        },
+        {
+          "webhook": "ticketmoa-support",
+          "body": {
+            "request_id": "tm09-3",
+            "user": "박서준",
+            "channel": "web",
+            "question": "예매 오픈 언제예요?"
+          }
+        },
+        {
+          "webhook": "ticketmoa-support",
+          "body": {
+            "request_id": "tm09-4",
+            "user": "박서준",
+            "channel": "web",
+            "question": "예매 오픈 언제예요?"
+          }
+        },
+        {
+          "webhook": "ticketmoa-support",
+          "body": {
+            "request_id": "tm09-5",
+            "user": "박서준",
+            "channel": "web",
+            "question": "예매 오픈 언제예요?"
+          }
+        }
+      ],
+      "after": [
+        {
+          "url": "http://localhost:8800/cache-clear",
+          "body": {}
+        }
+      ]
     },
     {
       "name": "TM-10 해외 IP 차단",
