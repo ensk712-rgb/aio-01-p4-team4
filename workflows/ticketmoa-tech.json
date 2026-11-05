@@ -225,7 +225,7 @@
         },
         "options": {
           "temperature": 0,
-          "timeout": 2500,
+          "timeout": 3200,
           "maxRetries": 1
         }
       },
@@ -245,7 +245,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction parseAgentJson(raw, required, fallback) {\n  const fb = { ok: false, value: fallback || {} };\n  let obj = raw;\n  if (typeof raw === 'string') {\n    const s = raw.replace(/```(?:json)?/gi, '');\n    const start = s.indexOf('{');\n    const end = s.lastIndexOf('}');\n    if (start < 0 || end <= start) return fb;\n    try { obj = JSON.parse(s.slice(start, end + 1)); } catch (e) { return fb; }\n  }\n  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return fb;\n  for (const k of required || []) if (!(k in obj)) return fb;\n  return { ok: true, value: obj };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst s = $('처리 준비').first().json;\nconst STAFF_TERMS = /책임자\\s*코드|수기\\s*모드|수기\\s*입장\\s*처리|스태프\\s*단말/;\nconst p = parseAgentJson($json.output, ['answer', 'grounded'], {});\nconst answer = p.ok && typeof p.value.answer === 'string' ? p.value.answer.trim() : '';\nlet problem = '';\nif (!p.ok) problem = 'unreadable';\nelse if (p.value.grounded !== true) problem = 'not_grounded';\nelse if (!answer || !/[가-힣]/.test(answer)) problem = 'empty_answer';\nelse if (/(자료|문서|근거|내용)(에는|에서는|에|가|는|은)?\\s*(없습니다|없어|없으|찾을 수 없|찾지 못|나와 있지 않|포함되어 있지 않|확인되지 않)/.test(answer)) problem = 'not_in_context';\nelse if (answer.length > 800) problem = 'too_long';\nelse if (s.access_level !== 'staff' && STAFF_TERMS.test(answer)) problem = 'staff_only_terms';\nreturn [{ json: { ...s, answer, problem } }];"
+        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction parseAgentJson(raw, required, fallback) {\n  const fb = { ok: false, value: fallback || {} };\n  let obj = raw;\n  if (typeof raw === 'string') {\n    const s = raw.replace(/```(?:json)?/gi, '');\n    const start = s.indexOf('{');\n    const end = s.lastIndexOf('}');\n    if (start < 0 || end <= start) return fb;\n    try { obj = JSON.parse(s.slice(start, end + 1)); } catch (e) { return fb; }\n  }\n  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return fb;\n  for (const k of required || []) if (!(k in obj)) return fb;\n  return { ok: true, value: obj };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst s = $('처리 준비').first().json;\nconst STAFF_TERMS = /책임자\\s*코드|수기\\s*모드|수기\\s*입장\\s*처리|스태프\\s*단말/;\nconst p = parseAgentJson($json.output, ['answer', 'grounded'], {});\nconst answer = p.ok && typeof p.value.answer === 'string' ? p.value.answer.trim() : '';\nlet problem = '';\nif (!p.ok) problem = 'unreadable';\nelse if (p.value.grounded !== true) problem = 'not_grounded';\nelse if (!answer || !/[가-힣]/.test(answer)) problem = 'empty_answer';\nelse if (/(자료|문서|근거|내용)(에는|에서는|에|가|는|은)?\\s*(없습니다|없어|없으|찾을 수 없|찾지 못|나와 있지 않|포함되어 있지 않|확인되지 않)/.test(answer)) problem = 'not_in_context';\n// \"구체적인 안내는 제공되지 않습니다\"처럼 근거가 없다는 말을 grounded:true로 내는 경우 (WF-04 1회차 2026-11-05)\nelse if (/(안내|정보|방법|절차)(는|은|가|이)?\\s*(별도로\\s*)?(제공되지 않|제공되어 있지 않|나와 있지 않|안내되어 있지 않)/.test(answer)) problem = 'not_in_context';\nelse if (answer.length > 800) problem = 'too_long';\nelse if (s.access_level !== 'staff' && STAFF_TERMS.test(answer)) problem = 'staff_only_terms';\nreturn [{ json: { ...s, answer, problem } }];"
       }
     },
     {
