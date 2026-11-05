@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>티켓모아 상담</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+    <section class="phone" aria-label="상담 채팅">
+      <header class="chat-head">
+        <div class="avatar bot">TM</div>
+        <div class="head-text">
+          <strong>티켓모아 고객센터</strong>
+          <span id="target">연결 확인 중</span>
+        </div>
+        <label class="who">
+          <span class="sr">사용자</span>
+          <select id="user"></select>
+        </label>
+      </header>
+      <ol id="messages" class="messages" aria-live="polite"></ol>
+      <div id="quick" class="quick" hidden></div>
+      <form id="composer" class="composer">
+        <textarea id="question" rows="1" maxlength="600" placeholder="문의 내용을 입력하세요"></textarea>
+        <button id="send" type="submit">전송</button>
+      </form>
+      <div id="counter" class="counter">0 / 500</div>
+    </section>
+
+    <section class="flow" aria-label="워크플로우 흐름">
+      <header class="flow-head">
+        <div>
+          <p class="eyebrow" id="ex-case">n8n 워크플로우</p>
+          <h1 id="ex-title">요청이 지나간 길</h1>
+          <p id="ex-point" class="point">질문을 보내면 실제 응답을 바탕으로 경로를 다시 보여 줍니다.</p>
+        </div>
+        <nav id="examples" class="examples" aria-label="예시 민원"></nav>
+      </header>
+      <div id="graph" class="graph"></div>
+      <footer class="flow-foot">
+        <div id="status" class="status">대기</div>
+        <div id="bar" class="bar" aria-label="단계별 소요 시간"></div>
+      </footer>
+    </section>
+  </main>
+  <script src="flow.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
