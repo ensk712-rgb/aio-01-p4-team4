@@ -82,16 +82,18 @@ A와 B가 같은 파일을 고치지 않도록 Supervisor·검증 Agent는 본�
 
 ## 6. 제출물 체크리스트
 
-- [ ] `README.md` (팀·역할·실행 방법·웹훅 경로·시연 순서)
-- [ ] `AGENTS.md`
-- [ ] `docs/TOPIC.md`, `docs/TEAM-CHARTER.md`
-- [ ] `docs/WORKFLOW-DESIGN.md` (35점, 연결선마다 페이로드 표, 노드 이름 = 실제 노드 이름)
-- [ ] `docs/RAG-ARCHITECTURE.md` (30점, 청킹 비교·임베딩 선정 이유·메타데이터·백업/복구·확장, **잰 값**)
-- [ ] `docs/EXECUTION-RESULT.md` (25점, `runs/` 숫자만, 실패 사례 2건+, KSM-REQ 6절 체크리스트 15개)
-- [ ] `docs/daily/` 3장, `docs/images/` (개인정보·키 가림)
-- [ ] `workflows/*.json` (키 없음)
-- [ ] `knowledge/`, `data/`, `cases/common.json`, `cases/team.json`, `requests/`, `runs/`
-- [ ] `tscan scan .` 0건, 강사가 README대로 다시 돌려 같은 결과
+11/09 오전 `44e11d2` 기준으로 확인함.
+
+- [x] `README.md` (팀·역할·실행 방법·웹훅 경로·시연 순서). 팀·역할은 5행, 웹훅 경로는 '워크플로우' 절, 실행 방법은 '처음 받은 사람' 절, 시연 순서는 '시연 순서 (발표)' 절에 있음
+- [x] `AGENTS.md`
+- [x] `docs/TOPIC.md`, `docs/TEAM-CHARTER.md`
+- [x] `docs/WORKFLOW-DESIGN.md` (35점, 연결선마다 페이로드 표, 노드 이름 = 실제 노드 이름). 6절 페이로드 표가 있고, 6절의 노드 이름 55개가 `workflows/*.json`의 실제 노드 이름과 같음
+- [x] `docs/RAG-ARCHITECTURE.md` (30점, 청킹 비교·임베딩 선정 이유·메타데이터·백업/복구·확장, **잰 값**). 2.1절 청킹 비교, 3.1절 임베딩, 4절 메타데이터, 5절 백업·복구·확장과 실측값이 있음
+- [x] `docs/EXECUTION-RESULT.md` (25점, `runs/` 숫자만, 실패 사례 2건+, KSM-REQ 6절 체크리스트 15개). 실패 사례 6건, 5.1절 체크리스트 15개 모두 체크
+- [~] `docs/daily/` 3장, `docs/images/` (개인정보·키 가림). DAY80·81·82가 있고, 이미지 2장(architecture, orchestration)에는 개인정보와 키가 없음. **DAY82의 미완료 항목(동결 시각, 대표 로그 캡처, Error Workflow 확인 등)은 제출 전에 채워야 함**
+- [x] `workflows/*.json` (키 없음). 10개, 키·웹후크 주소 패턴 검사 0건
+- [x] `knowledge/`, `data/`, `cases/common.json`, `cases/team.json`, `requests/`, `runs/`. 지식 문서 8개, 요청 7개, `runs/vm/` 보고서 59개
+- [~] `tscan scan .` 0건, 강사가 README대로 다시 돌려 같은 결과. 11/09 로컬에서 `tscan scan .` 0건(219개 파일). **마지막 커밋 뒤 한 번 더 돌릴 것.** README대로 다시 돌린 결과는 아직 확인하지 않음
 
 ## 7. 가산 (필수가 다 통과한 뒤에만)
 

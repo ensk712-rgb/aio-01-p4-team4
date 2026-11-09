@@ -206,7 +206,7 @@ n8n 색인 검사가 문서당 `##` 3절 이상을 요구하므로, 500/80 대�
 | 문서 100배 규모 | 약 800문서·4,200절 청크 | 정제본 8문서·42절이 선형으로 증가한다고 가정한 산술 추산; 측정값 아님 |
 | 벡터 수치 데이터 하한 (100배) | 약 49.2 MiB | 4,200 × 3,072 × 4바이트(float32)만 계산; 문자열·메타데이터·런타임 오버헤드 제외 |
 
-**미해결 항목**: 실제 API 청구 토큰·비용, n8n 개별 실행 ID, 단일 응답·실패 집계, `clearStore` 실패 복구, VM 점수 분포와 문항별 상세 검색 결과, VM Git 커밋 및 과거 평가 당시 활성 워크플로우, 실제 저장된 42개 청크의 본문·메타데이터·저장소 분리 검증, 재시작 전후 인덱스 유지 여부, 실패 롤백 시간, 재시작 직후 WF-01 지연 원인, `tech`·`search`·`index`의 Error Workflow 미설정 의도와 실제 오류 자동 실행 여부. 현재 VM 문서 해시와 index/search 활성 설정은 확인되어 남은 목록에서 제외한다. 정제본 로컬 `42청크 / hit@3 27/28(35문항)·30/30(38문항) / 스태프 노출 0건 / 재색인 약 5.9초`, 500/80 비교, VM 공통·팀 시나리오와 38문항 평가 요약은 측정됐으므로 미완료 목록에서 제외한다.
+**미해결 항목**: 실제 API 청구 토큰·비용, n8n 개별 실행 ID, 단일 응답·실패 집계, `clearStore` 실패 복구, VM 점수 분포와 문항별 상세 검색 결과, VM Git 커밋 및 과거 평가 당시 활성 워크플로우, 실제 저장된 42개 청크의 본문·메타데이터·저장소 분리 검증, 재시작 전후 인덱스 유지 여부, 실패 롤백 시간, 재시작 직후 WF-01 지연 원인, 운영 Support 자체의 미처리 오류에서 Error Workflow가 자동 실행되는지, `tech`·`search`·`index`의 Error Workflow 미설정 의도, 오류 유형 정규화 및 동시 실행 중복 차단. 11/09 U행에서 시험용 `ticketmoa-errcheck`와 별도 `ticketmoa-ops` 오류의 자동 실행·알림은 확인됐지만 이는 Support 자체 오류를 검증한 결과가 아니다. 현재 VM 문서 해시와 index/search 활성 설정은 확인되어 남은 목록에서 제외한다. 정제본 로컬 `42청크 / hit@3 27/28(35문항)·30/30(38문항) / 스태프 노출 0건 / 재색인 약 5.9초`, 500/80 비교, VM 공통·팀 시나리오와 38문항 평가 요약은 측정됐으므로 미완료 목록에서 제외한다.
 
 모델 차원 및 요금은 [OpenAI 공식 가이드](https://developers.openai.com/api/docs/guides/embeddings/)와 [모델 가격](https://developers.openai.com/api/docs/models/text-embedding-3-large)을 참고했다. 실측이 추가되면 `실행일시 / 환경 / 실행 ID / 문서 커밋 / 모델 / 비용`과 함께 갱신한다.
 
@@ -239,7 +239,7 @@ n8n 색인 검사가 문서당 `##` 3절 이상을 요구하므로, 500/80 대�
 
 **현재 저장소의 tech/support 설정 점검 (VM 활성본과 비교하지 않음).** `ticketmoa-tech.json`의 작성 모델 제한은 3,200ms, `ticketmoa-agents.json`의 검증 모델 제한은 2,000ms다. `ticketmoa-support.json`의 `Call tech`는 HTTP timeout 5,000ms를 설정하지만 요청 본문에 `deadline_ms`를 포함하지 않는다. `ticketmoa-tech.json`은 값이 없으면 자체 마감 시각을 현재 시각+5,000ms로 만든다. 따라서 현재 저장소 코드에서는 상위 HTTP 5초와 하위 기본 마감 5초가 별개로 작동하며, 지원 워크플로우에서 남은 전체 시간 예산을 전달하지 않는다. `Call refund`의 `deadline_ms: 4800`은 환불 호출 값이므로 tech에 전달되는 값으로 해석하지 않는다. 현재 VM에서 비교한 활성본은 index/search뿐이며, tech·agents·support의 VM 활성본 일치 여부와 과거 실행 당시 설정은 확인되지 않았다.
 
-**Error Workflow 및 재시작 요구사항.** 사용자가 제공한 VM 확인 결과 ticketmoa-errors는 활성 상태다. 저장소 JSON에서 ticketmoa-tech, ticketmoa-search, ticketmoa-index에는 settings.errorWorkflow가 없고, ticketmoa-support와 ticketmoa-agents는 ticketmoaErrors01을 지정한다. 미설정이 의도된 예외인지 정한 근거는 확인되지 않았다. 실제 미처리 오류에서 Error Workflow가 자동 실행되는지는 시험하지 않았다. 재시작 후 재색인 및 양쪽 검색 복구는 확인했지만, 재색인 전 색인 유지 여부는 확인하지 않았다.
+**Error Workflow 및 재시작 요구사항.** 결과서 U행에 따르면 운영 `ticketmoa-errors`(`ticketmoaErrors01`)는 2026-11-09 배포 후 9개 노드·`active: true`로 확인됐다. 같은 Error Workflow를 연결한 시험용 `ticketmoa-errcheck`의 실행 23469가 실패한 뒤 Error Workflow가 자동 실행되어 `/alerts`에 기록했고, 리드가 해당 Discord 알림 수신을 확인했다. U행에는 별도 운영 `ticketmoa-ops` 실행 9031·9032의 미처리 오류 알림도 기록돼 있다. 이는 Error Workflow가 운영 n8n에서 일부 오류 경로에 실행된 증거지만, 운영 Support 자체의 미처리 오류 실행을 검증한 것은 아니다. 저장소 JSON에서 `ticketmoa-tech`, `ticketmoa-search`, `ticketmoa-index`에는 `settings.errorWorkflow`가 없고, `ticketmoa-support`와 `ticketmoa-agents`는 `ticketmoaErrors01`을 지정한다. 미설정 의도는 확인되지 않았다. U행의 세 오류는 `unknown_error`로 분류됐으며 원인 분류와 동시 실행 중복 차단은 미검증이다. 재시작 후 재색인 및 양쪽 검색 복구는 확인했지만, 재색인 전 색인 유지 여부는 확인하지 않았다.
 
 **VM 검색 평가 (2026-11-06, `ticketmoa-search`; 원본 JSON·CSV 로컬 확보).** JSON SHA-256 `78d1c24e38fef3e71f43784f33d03b38a3e4d24b18c591f5b4715a9809e7a228`, CSV SHA-256 `02a570845d69db2100ccb23746bb2afdd6be877716a060872584a5007cbd21e5`가 VM 기록값과 일치한다. JSON 파싱 및 CSV 읽기가 성공했고, JSON의 실행 ID는 `20261106T063854087633Z`, 질문 38개, CSV 데이터 행 38개이며 질문 ID 38개가 서로 대응한다. 아래 표는 기존 집계 결과를 유지하며 원본 파일 경로와 해시를 남긴다.
 
@@ -261,7 +261,10 @@ n8n 색인 검사가 문서당 `##` 3절 이상을 요구하므로, 500/80 대�
 | 현재 활성 `ticketmoa-search` | ID `w1915b8090339ad9`, active `true`, 13노드; 저장소 JSON과 connections/settings 일치. 노드별 차이는 `id`, `webhookId`뿐 | 사용자가 VM에서 수행한 활성 내보내기 비교. VM Git 커밋은 확인 불가 |
 | Index/Search 파일 해시 | 로컬·VM JSON의 LF 정규화 SHA-256 일치 | 사용자가 제공한 PowerShell·Web SSH 확인 결과. VM 커밋은 미확인 |
 | 청크 메타데이터·권한 분기 설정 | 두 Data Loader가 `doc=$json.doc`, `section=$json.section`, `access_level=$json.access_level`을 사용. `access_level === "staff"`는 `ticketmoa_kb_v1_staff`, 그 외 검증된 `all`은 `ticketmoa_kb_v1_all`로 저장 | 워크플로우 설정 확인. 이는 설정 검증이며 Vector Store의 실제 청크 42개 전체 내용·메타데이터를 직접 확인한 결과는 아님 |
-| `ticketmoa-errors` 활성 상태 | 활성 워크플로우 확인됨 | 사용자가 제공한 VM 확인 결과. 실제 오류에서 자동 실행되는지는 미검증 |
+| `ticketmoa-errors` 활성 상태 | 2026-11-09 배포 확인에서 9개 노드, `active: true` | `docs/EXECUTION-RESULT.md` U행. 이는 활성 상태 확인이며, 아래 실행 기록과 구분 |
+| 운영 Error Workflow 자동 실행 | 11/09 09:11:29 KST 시험용 `ticketmoa-errcheck` 실행 23469가 `Count by category`에서 실패(`unexpected_execution_error`)한 뒤 자동 실행되어 `/alerts`에 기록됨 (`error-alert:ticketmoaErrChk1:23469`); Discord 도착은 리드 확인. 별도 11/06 `ticketmoa-ops` 실행 9031·9032의 미처리 오류 알림도 기록됨 | `docs/EXECUTION-RESULT.md` U행. 3노드 시험 워크플로우는 확인 후 비활성화됨. 시험 워크플로우와 Ops 경로의 증거이며, 운영 Support 자체 오류나 `tech`·`search`·`index` 자동 실행 증거가 아님 |
+| 운영 Support 자체 오류 자동 실행 | 미검증 | `docs/EXECUTION-RESULT.md` U행에서 명시. Support의 미처리 오류를 직접 시험하지 않음 |
+| Error Workflow 오류 분류·동시성 | 분류 미확정, 동시 실행 중복 차단 미검증 | U행의 알림 세 건은 `unknown_error`; 오류 객체의 원시 `name` 및 원자적 중복 방지 미확인 |
 | 평가 당시 배포 소스·활성 워크플로우 | 미확인 | VM 프로젝트에 `.git`이 없어 커밋을 대조할 수 없고, 현재 활성본 비교는 과거 평가 실행에 소급 적용되지 않음 |
 | 결과 원본 | `runs/vm/rag-search-eval-20261106T063854087633Z.json` (127,226 bytes), `runs/vm/rag-search-eval-20261106T063854087633Z.csv` (94,974 bytes) | 로컬 확보·형식 검사 완료; 위 SHA-256 검증값과 일치. JSON·CSV 모두 38문항을 포함 |
 
@@ -325,7 +328,7 @@ WF-01 실패는 `push`와 재색인 직후 1회차에서 나왔고 답은 정상
 - **VM 전체 회귀·재색인 (2026-11-07):** 보관 실행 로그 기준 공통 51/51, 팀 13/13, 보안 8/8, bench 실패 0/5였다. 회귀 전 예열 호출 중 하나가 8.8초였으며, 재색인 직후 공개 검색에서 `index_unavailable` 1회 후 정상 응답이 기록됐다. 따라서 전체 회귀 통과는 RAG 검색 전용 hit@3 평가, 콜드 스타트 8초 준수, 실제 저장 청크 전수 검증 또는 오류 원인 확인을 뜻하지 않는다. 세부 근거와 수치는 5.1절에 기록했다.
 - **완료한 VM 검색 평가 (2026-11-06):** 원래 실행은 W30 30/30이었다. 기존 top3 사후 재채점은 S30 29/30 대표값, S28 27/28 보조값, W30 30/30 참고값이다. strict 기준 실패 문항은 Q11이며 top3에는 정답 문서의 2절·5절이 있었지만 원래 정답 1절은 없었다. S30/W30 차이는 채점 범위 차이지 성능 변화가 아니다. 요청/API 오류 0건, 직원 정보·본문 누출, no_ground·no_external_leak 결과는 JSON summary의 검색 전용 결과다. 이 설계서에는 질문별 top3 및 no_ground 점수 분포를 추가하지 않았다. 평가 metadata 해시 8개는 현재 VM 파일과 일치하며, LF 정규화한 현재 로컬 문서와 VM 문서도 8/8 일치한다. 현재 활성 index/search 설정은 저장소본과 비교했으나 평가 당시 활성본이나 VM Git 커밋의 증거는 아니다. 평가 원본은 로컬에 확보했으며 세부 평가는 5.1절 참조.
 - **남은 측정·확인:** 실제 저장소 42개 청크 전체의 본문·메타데이터와 일반/직원 저장소 분리를 대조, VM Git 커밋 및 평가 당시 활성 워크플로우 확인, 재시작 전후 인덱스 유지 여부, 재색인 중 실패 후 수동 복구 및 롤백 시간. 예상 청크 명세의 37/5/42·빈 청크 0·본문 SHA-256 생성은 확인했지만 저장 레코드의 직접 대조는 미완료다. 현재 문서 해시와 활성 index/search 설정은 확인했으나 과거 평가에 소급 적용하지 않는다. 이 전수 검증 범위에서는 운영 VM 추가 재색인·재시작·장애 유발 시험을 하지 않았다. WF-01 및 WF-11은 이후 워크플로우·문서·환경 변경 시 해당 버전에서 다시 수행한다.
-- **추가 확인 필요:** 실제 API 청구 토큰·비용, WF-01 간헐 지연 원인과 deadline_ms 예산 전달 효과, tech·search·index에 Error Workflow를 두지 않은 설계 의도, ticketmoa-errors의 실제 미처리 오류 자동 실행. VM 재색인 기록은 11/06 **2.222초**(색인 API와 후속 검색을 포함한 전체 명령)와 11/07 **4.3초**(보관 로그의 재색인 구간 표기)가 있으며 측정 범위가 달라 직접 비교하지 않는다. 11/07 재색인 직후 `index_unavailable`이 발생한 원인도 확인되지 않았다.
+- **추가 확인 필요:** 실제 API 청구 토큰·비용, WF-01 간헐 지연 원인과 deadline_ms 예산 전달 효과, `tech`·`search`·`index`에 Error Workflow를 두지 않은 설계 의도, 운영 Support 자체의 미처리 오류 자동 실행, U행에서 `unknown_error`로 남은 오류 유형 분류, 동시 실행 중복 차단. U행은 시험용 `ticketmoa-errcheck`와 별도 Ops 오류에서 운영 Error Workflow의 실행을 확인했으나 Support 전체 경로의 검증으로 확대 해석하지 않는다. VM 재색인 기록은 11/06 **2.222초**(색인 API와 후속 검색을 포함한 전체 명령)와 11/07 **4.3초**(보관 로그의 재색인 구간 표기)가 있으며 측정 범위가 달라 직접 비교하지 않는다. 11/07 재색인 직후 `index_unavailable`이 발생한 원인도 확인되지 않았다.
 - 금전·신분증·안전 관련 정책을 변경할 때에는 해당 테스트·상담원 이관 흐름·환불 계산 로직과 함께 검토한다.
 
 ### 5.3 재시작 후 재색인·권한 검색 복구 절차
