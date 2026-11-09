@@ -11,6 +11,7 @@
 - n8n 2.42.6, OpenAI `gpt-4.1-mini`, `text-embedding-3-large`, In-Memory Vector Store
 - 외부 서비스는 연습용 데이터 API(`http://localhost:8800`)만 쓴다: 예매·상담 조회 `GET /tickets/<id>?requester=`, 티켓 `POST /tickets`, 알림 `POST /alerts`, 기록 `POST /logs`, 실패 대기열 `POST /dlq`, 캐시 `/cache/<key>`
 - Ollama, Supabase, 실제 Slack·Jira는 쓰지 않는다 (가산은 리드가 따로 정한다)
+- 예외 (가산, 리드 허용 2026-11-06, #35): `ticketmoa-errors`·`ticketmoa-handoff`는 장애·긴급 알림을 디스코드로도 보낼 수 있다. `/alerts` 기록을 대신하지 않고, 전송이 실패해도 워크플로우는 정상 종료한다. 연락처는 가린 내용만 보낸다.
 
 ## 3. 공통 계약 (리드 허락 없이 바꾸지 않는다)
 
@@ -38,9 +39,11 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 
 **에이전트는 요청한 사람이 담당하는 파일만 고친다.** 다른 파일을 고쳐야 하면 고치지 말고 무엇을 왜 바꿔야 하는지 말로 알려 준다.
 
+**임시 대행 (2026-11-07 리드 결정, 제출까지):** 팀원 부재로 최두나가 B·D·E 담당 파일을 대행한다. 최두나가 요청하면 에이전트는 이 파일도 고칠 수 있다. C 정예진 담당 파일은 대행하지 않으며, 위 규칙대로 말로 알려 준다. 고친 내용은 원래 담당자에게 알린다.
+
 ## 5. n8n 워크플로우를 만들 때
 
-- **처음부터 JSON을 새로 쓰지 않는다.** 과정 실습의 정답 워크플로우(`~/aio-01d4-stu/Last3Mon/<일차>/reference/*.json`)를 복사해 이름·경로·노드를 고친다. 노드 `type`·`typeVersion`은 reference에 있는 것만 쓴다.
+- **처음부터 JSON을 새로 쓰지 않는다.** 과정 실습의 정답 워크플로우(`~/aio-01d4-stu/Last3Mon/<일차>/reference/*.json`)를 복사해 이름·경로·노드를 고친다. 노드 `type`·`typeVersion`은 reference에 있는 것만 쓴다. 예외는 2장의 디스코드 알림에 쓰는 `n8n-nodes-base.discord` v2뿐이다.
 - 워크플로우 이름과 웹훅 경로는 `ticketmoa-`로 시작한다.
 - 하위 워크플로우는 Execute Workflow가 아니라 **HTTP Request로 웹훅을 부른다** (팀원마다 n8n 워크플로우 ID가 다르다). HTTP Request에는 timeout(5초)과 오류 출력을 둔다.
 - 규칙으로 정할 수 있는 것(길이, 권한, 중복, 점수 기준, 금액 한도, attempt 횟수)은 Code·If·Switch로 한다. LLM은 분류·답변·검증에만 쓴다.
@@ -54,7 +57,7 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 
 ## 6. 절대 하지 않는 것
 
-- API 키·토큰을 워크플로우 JSON, 문서, 코드, 커밋에 넣는 것. 키는 n8n Credential에만 있다 (이름: `OpenAI (.env)`(id `openAiCourse0001`, `Last3Mon/65/n8n/register-credentials.sh`로 등록), `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key))
+- API 키·토큰을 워크플로우 JSON, 문서, 코드, 커밋에 넣는 것. 키는 n8n Credential에만 있다 (이름: `OpenAI (.env)`(id `openAiCourse0001`, `Last3Mon/65/n8n/register-credentials.sh`로 등록), `ticketmoa-data-api`(X-Api-Key), `ticketmoa-team-key`(X-Team-Key), `ticketmoa-discord`(id `ticketmoaDiscord1`, Discord 웹후크 URL))
 - 실제 사람의 이름·연락처를 쓰는 것. 가짜 데이터는 `010-0000-xxxx`, `@example.com`
 - 응답·로그에 연락처 원문을 남기는 것 (가린 개수는 `security.masked`)
 - `cases/common.json`의 기대 결과를 결과에 맞춰 고치는 것
@@ -66,11 +69,11 @@ route 값: "자동 답변" | "보완 질문" | "담당자 이관" | "권한 없�
 git pull                                            # 바꾸기 전 (Windows 로컬)
 # 내 파일만 고친다
 scp workflows/<내 파일>.json aio-t4:~/aio-01-p4-team4/workflows/
-ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflows/<내 파일>.json && uv run tools/flow.py push workflows/<내 파일>.json && sleep 10 && uv run --env-file .env tools/reindex.py && uv run --env-file .env tools/flow.py test cases/common.json --webhook ticketmoa-support'"
+ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflows/<내 파일>.json && uv run tools/flow.py push workflows/<내 파일>.json && sleep 10 && uv run --env-file .env tools/reindex.py && sleep 5 && uv run --env-file .env tools/demo.py --warm && uv run --env-file .env tools/flow.py test cases/common.json --webhook ticketmoa-support'"
 git commit -m "<무엇> · common N/14"
 ```
 
-`flow.py`는 저장소의 `tools/flow.py`(78일차 `flow.py`를 부르고 `.env`의 `TM_TEAM_KEY`를 `X-Team-Key`로 붙임)를 저장소 뿌리에서 쓴다. 78 원본이 다른 곳에 있으면 `FLOW_PY`로 경로를 준다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
+`push`는 n8n을 다시 켠다. 재시작 뒤 첫 호출에는 약 1~2초가 더 붙으므로 시험·시연 전에 `tools/demo.py --warm`으로 예열하고, 결과에 예열 여부를 적는다. `flow.py`는 저장소의 `tools/flow.py`(78일차 `flow.py`를 부르고 `.env`의 `TM_TEAM_KEY`를 `X-Team-Key`로 붙임)를 저장소 뿌리에서 쓴다. 78 원본이 다른 곳에 있으면 `FLOW_PY`로 경로를 준다. 공통 시나리오를 깨뜨렸으면 깨뜨린 사람이 고친다.
 
 ## 8. 로컬과 서버
 
@@ -80,4 +83,4 @@ git commit -m "<무엇> · common N/14"
 4. 서버 폴더와 n8n은 팀 전체가 하나를 쓴다. 자기 파일만 `scp`하고, 공통 폴더(`knowledge/`, `data/`, `cases/`, `lib/`)는 리드가 병합된 `main` 기준으로 올린다.
 5. 서버는 Linux(Ubuntu), RAM 2.6GB를 n8n과 같이 쓴다. 오래 걸리는 작업은 `tmux`에서, 무거운 작업 전에는 `free -h`를 본다.
 6. 서버의 `~/n8n/day65-n8n`과 n8n 컨테이너는 요청 없이 건드리지 않는다.
-7. 서버 주소·포트·비밀번호·키·`.env` 값은 이 저장소에 적지 않는다. `.env`는 `scp`로 따로 옮긴다.
+7. 서버 주소·포트·비밀번호·키·`.env` 값은 이 저장소에 적지 않는다. `.env`는 `scp`로 따로 옮긴다. 예외 (리드 결정, 2026-11-07): 평가자 확인용 공개 웹앱 URL은 산출물에 적을 수 있다. 접속 포트·웹 터미널 주소·비밀번호·키는 계속 적지 않는다.

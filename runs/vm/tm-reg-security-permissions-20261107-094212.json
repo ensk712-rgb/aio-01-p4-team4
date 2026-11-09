@@ -1,0 +1,428 @@
+{
+  "cases": "tm-reg-security-permissions.json",
+  "webhook": "ticketmoa-support",
+  "passed": 8,
+  "total": 8,
+  "results": [
+    {
+      "case": "SEC-01 요청 user에 직원 이름 입력해도 직원 문서 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 1.8,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-staff-name-spoof",
+        "user": "최현우",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-staff-name-spoof",
+        "route": "담당자 이관",
+        "answer": "직원 전용 운영 절차는 담당자에게 확인을 요청하겠습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2084).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2084",
+          "key": "reg093328-sec-staff-name-spoof",
+          "category": "general_info",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 1596,
+          "agents_ms": 1228,
+          "handoff_ms": 245
+        },
+        "reason": "staff_only_request"
+      }
+    },
+    {
+      "case": "SEC-02 고객 요청의 access_level staff 값 무시",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-access-level-spoof",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요",
+        "access_level": "staff"
+      },
+      "response": {
+        "request_id": "reg093328-sec-access-level-spoof",
+        "route": "담당자 이관",
+        "answer": "직원 전용 운영 절차는 담당자에게 확인을 요청하겠습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2085).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2085",
+          "key": "reg093328-sec-access-level-spoof",
+          "category": "general_info",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2033,
+          "agents_ms": 1611,
+          "handoff_ms": 278
+        },
+        "reason": "staff_only_request"
+      }
+    },
+    {
+      "case": "SEC-03 직원 이름으로 타인 문의 조회 불가",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.7,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-private-name-spoof",
+        "user": "최현우",
+        "user_id": "usr-0001",
+        "channel": "web",
+        "question": "이도윤의 문의 C-2003 처리 상황을 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-private-name-spoof",
+        "route": "권한 없음",
+        "answer": "본인 명의의 예매·문의 건만 확인할 수 있습니다. 예매하신 계정으로 다시 문의해 주세요.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 515,
+          "agents_ms": 184,
+          "payment_ms": 235
+        },
+        "reason": "not_owner"
+      }
+    },
+    {
+      "case": "SEC-04 access_level staff 값으로 타인 예매의 환불 정보 조회 불가",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 1.8,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-private-staff-key",
+        "user": "김하늘",
+        "user_id": "usr-9999",
+        "access_level": "staff",
+        "channel": "web",
+        "question": "T20261104-0412 환불 진행 상태를 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-private-staff-key",
+        "route": "보완 질문",
+        "answer": "확인할 문의 번호(C-로 시작하는 번호)나 예매 번호를 알려 주세요.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "refund_request",
+            "booking_lookup"
+          ],
+          "confidence": 0.95
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 1608,
+          "agents_ms": 1477
+        },
+        "reason": "low_confidence_or_missing"
+      }
+    },
+    {
+      "case": "SEC-05 본인 문의 조회 시 연락처 원문 가림",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.6,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-private-contact",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "제 문의 C-2003 처리 상황이랑 제 연락처 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-private-contact",
+        "route": "자동 답변",
+        "answer": "문의 C-2003(예매 취소 환불 문의)는 현재 '처리 완료' 상태입니다. 관람일 13일 전 취소로 수수료 없이 100,000원 환불 처리했습니다. 카드사 반영까지 3~5영업일 걸립니다. 등록된 연락처: 010-****-3307, d***@example.com",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 2
+        },
+        "timings": {
+          "total_ms": 368,
+          "agents_ms": 121,
+          "payment_ms": 170
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "SEC-06 본인 문의 상태 조회",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.6,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-private-status",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "response": {
+        "request_id": "reg093328-sec-private-status",
+        "route": "자동 답변",
+        "answer": "문의 C-2002(모바일티켓 QR 미표시)는 현재 '접수됨' 상태입니다. 앱 업데이트 후에도 QR이 회색으로 표시됨. 앱 로그 확인 후 담당자를 배정합니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 2
+        },
+        "timings": {
+          "total_ms": 390,
+          "agents_ms": 130,
+          "payment_ms": 187
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "SEC-07 긴급 복합 문의는 근거와 조회를 합쳐 이관",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 4.5,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-private-urgent",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "공연 10분 전인데 모바일티켓 QR이 안 떠요! 어제 문의한 C-2002도 어떻게 됐는지 확인해 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-private-urgent",
+        "route": "담당자 이관",
+        "answer": "공연 시작이 임박했으니 입장 방법부터 안내합니다. 공연장 1층 현장 발권 창구에서 예매번호와 예매자 본인 신분증을 보여 주시면 종이 티켓을 받아 입장할 수 있습니다. 신분증이 없으면 공연장 직원에게 예매 확인 방법을 문의해 주세요.\n\n문의 C-2002(모바일티켓 QR 미표시)는 현재 '접수됨' 상태입니다. 앱 업데이트 후에도 QR이 회색으로 표시됨. 앱 로그 확인 후 담당자를 배정합니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2086).",
+        "sources": [
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "2. 방법 1: 현장 발권 창구",
+            "score": 0.574
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "5. 현장 스태프 알림",
+            "score": 0.535
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "1. 원칙: 입장이 먼저",
+            "score": 0.52
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "3. 방법 2: 예매자 이름 확인 입장",
+            "score": 0.502
+          }
+        ],
+        "ticket": {
+          "id": "T-2086",
+          "key": "reg093328-sec-private-urgent",
+          "category": "tech_issue",
+          "priority": "high",
+          "assignee": "현장 스태프",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue",
+            "booking_lookup"
+          ],
+          "confidence": 0.95,
+          "alert": {
+            "channel": "venue-staff",
+            "priority": "high"
+          },
+          "handoff": {
+            "dlq": false,
+            "alert": true
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 2
+        },
+        "timings": {
+          "total_ms": 4292,
+          "agents_ms": 1453,
+          "search_ms": 633,
+          "payment_ms": 221,
+          "tech_ms": 1495,
+          "handoff_ms": 390
+        },
+        "reason": "urgent_entry"
+      }
+    },
+    {
+      "case": "SEC-08 고객 이름으로 타인 문의·연락처 조회 불가",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.6,
+      "status": 200,
+      "request": {
+        "request_id": "reg093328-sec-other-customer",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "문의 C-2003 처리 상황이랑 연락처 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg093328-sec-other-customer",
+        "route": "권한 없음",
+        "answer": "본인 명의의 예매·문의 건만 확인할 수 있습니다. 예매하신 계정으로 다시 문의해 주세요.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 420,
+          "agents_ms": 140,
+          "payment_ms": 209
+        },
+        "reason": "not_owner"
+      }
+    }
+  ]
+}

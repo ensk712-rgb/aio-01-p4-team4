@@ -38,7 +38,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nfunction maskDeep(value) {\n  let masked = 0;\n  const walk = v => {\n    if (typeof v === 'string') { const r = maskPII(v); masked += r.masked; return r.text; }\n    if (Array.isArray(v)) return v.map(walk);\n    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = walk(v[k]); return o; }\n    return v;\n  };\n  return { value: walk(value), masked };\n}\n// ↑ lib/common.js 원문 복사 끝\n\n// 입력 검사: request_id·user·summary는 비어 있지 않은 문자열이어야 한다. 아니면 티켓·DLQ·알림을 만들지 않고\n// HTTP 200 + {\"error\":\"invalid request\"}로 돌려준다 (다시 보내도 성공할 수 없는 요청을 장애로 올리지 않는다).\n// category·priority·alert·deadline_ms는 모양이 틀리면 기본값으로 바꾼다 (본체가 보내는 정상 요청은 그대로).\nconst raw = $input.first().json.body;\nconst b = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};\nconst isText = (v, max) => typeof v === 'string' && v.trim() !== '' && v.length <= max;\nconst codes = [];\nif (!isText(b.request_id, 100)) codes.push('invalid_request_id');\nif (!isText(b.user, 50)) codes.push('invalid_user');\nif (!isText(b.summary, 2000)) codes.push('invalid_summary');\nif (codes.length) {\n  return [{ json: { invalid: true, codes, request_id: typeof b.request_id === 'string' ? b.request_id.slice(0, 100) : '' } }];\n}\nconst summary = maskPII(b.summary);\nconst alertIn = b.alert && typeof b.alert === 'object' && !Array.isArray(b.alert) ? b.alert : null;\nconst alert = alertIn ? maskDeep(alertIn) : { value: null, masked: 0 };\nconst category = typeof b.category === 'string' && /^[a-z][a-z0-9_]{0,39}$/.test(b.category) ? b.category : 'general';\nconst priority = b.priority === 'high' ? 'high' : 'normal';\nconst remain = typeof b.deadline_ms === 'number' && isFinite(b.deadline_ms) && b.deadline_ms > 0 ? Math.min(b.deadline_ms, 10000) : 5000;\n// 데이터 API는 title, requester, category, priority만 저장한다. 요약을 잃지 않도록 title에 담는다.\nconst title = ('[' + category + '] ' + summary.text).replace(/\\s+/g, ' ').slice(0, 500);\nreturn [{ json: {\n  invalid: false,\n  request_id: b.request_id, user: b.user, title, summary: summary.text, category, priority,\n  alert: alert.value, masked: summary.masked + alert.masked,\n  // 본체가 넘기는 deadline_ms는 남은 시간(ms, 최소 500)이다. 받은 시각부터 세어 절대 시각으로 바꾼다 (최대 10초).\n  // reserve_ms는 티켓 실패 뒤 DLQ·알림·응답에 남겨 두는 시간이다.\n  deadline_ms: Date.now() + remain, reserve_ms: 300, try_no: 1,\n} }];\n"
+        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nfunction maskDeep(value) {\n  let masked = 0;\n  const walk = v => {\n    if (typeof v === 'string') { const r = maskPII(v); masked += r.masked; return r.text; }\n    if (Array.isArray(v)) return v.map(walk);\n    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = walk(v[k]); return o; }\n    return v;\n  };\n  return { value: walk(value), masked };\n}\n// ↑ lib/common.js 원문 복사 끝\n\n// 입력 검사: request_id·user·summary는 비어 있지 않은 문자열이어야 한다. 아니면 티켓·DLQ·알림을 만들지 않고\n// HTTP 200 + {\"error\":\"invalid request\"}로 돌려준다 (다시 보내도 성공할 수 없는 요청을 장애로 올리지 않는다).\n// category·priority·alert·deadline_ms는 모양이 틀리면 기본값으로 바꾼다 (본체가 보내는 정상 요청은 그대로).\nconst raw = $input.first().json.body;\nconst b = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};\n// ↓ lib/common.js 원문 복사\nfunction ticketAssignee(category, priority) {\n  if (priority === 'high') return '현장 스태프';\n  if (category === 'scalping_report') return '보안팀';\n  return 'CS 상담원';\n}\n// ↑ lib/common.js 원문 복사 끝\nconst isText = (v, max) => typeof v === 'string' && v.trim() !== '' && v.length <= max;\nconst codes = [];\nif (!isText(b.request_id, 100)) codes.push('invalid_request_id');\nif (!isText(b.user, 50)) codes.push('invalid_user');\nif (!isText(b.summary, 2000)) codes.push('invalid_summary');\nif (codes.length) {\n  return [{ json: { invalid: true, codes, request_id: typeof b.request_id === 'string' ? b.request_id.slice(0, 100) : '' } }];\n}\nconst summary = maskPII(b.summary);\nconst alertIn = b.alert && typeof b.alert === 'object' && !Array.isArray(b.alert) ? b.alert : null;\nconst alert = alertIn ? maskDeep(alertIn) : { value: null, masked: 0 };\nconst category = typeof b.category === 'string' && /^[a-z][a-z0-9_]{0,39}$/.test(b.category) ? b.category : 'general';\nconst priority = b.priority === 'high' ? 'high' : 'normal';\nconst remain = typeof b.deadline_ms === 'number' && isFinite(b.deadline_ms) && b.deadline_ms > 0 ? Math.min(b.deadline_ms, 10000) : 5000;\nconst assignee = ticketAssignee(category, priority);\n// 데이터 API는 title, requester, category, priority만 저장한다. 담당과 요약을 잃지 않도록 title에 담는다.\nconst title = ('[' + category + ' · 담당 ' + assignee + '] ' + summary.text).replace(/\\s+/g, ' ').slice(0, 500);\nreturn [{ json: {\n  invalid: false,\n  request_id: b.request_id, user: b.user, title, summary: summary.text, category, priority, assignee,\n  alert: alert.value, masked: summary.masked + alert.masked,\n  // 본체가 넘기는 deadline_ms는 남은 시간(ms, 최소 500)이다. 받은 시각부터 세어 절대 시각으로 바꾼다 (최대 10초).\n  // reserve_ms는 티켓 실패 뒤 DLQ·알림·응답에 남겨 두는 시간이다.\n  deadline_ms: Date.now() + remain, reserve_ms: 300, try_no: 1,\n} }];\n"
       },
       "notes": "【역할】 티켓 본문을 만들고 연락처를 가린다.\n【입력】 요청 본문.\n【처리】 maskPII로 요약을, maskDeep으로 알림을 가린다. 데이터 API가 summary 칸을 버리므로 요약을 title에도 넣는다. 질문 원문이 그대로 나가지 않는다.\n【출력】 {request_id, user, title, summary, category, priority, alert, masked, deadline_ms, try_no:1}.",
       "notesInFlow": false
@@ -117,7 +117,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ key: $json.request_id, title: $json.title, requester: $json.user, category: $json.category, priority: $json.priority, summary: $json.summary }) }}",
+        "jsonBody": "={{ JSON.stringify({ key: $json.request_id, title: $json.title, requester: $json.user, category: $json.category, priority: $json.priority, assignee: $json.assignee, summary: $json.summary }) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth"
       },
@@ -141,7 +141,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nfunction shouldRetry(status, errorCode) {\n  if (status === 429) return true;\n  if (typeof status === 'number' && status >= 500) return true;\n  if (!status && /TIMEDOUT|ABORTED|ECONNRESET|timeout/i.test(String(errorCode || ''))) return true;\n  return false;\n}\nfunction backoffMs(attempt, retryAfterSeconds, capMs) {\n  const cap = capMs || 3000;\n  if (retryAfterSeconds && Number(retryAfterSeconds) > 0) return Math.min(Number(retryAfterSeconds) * 1000, cap);\n  return Math.min(500 * Math.pow(2, Math.max(0, attempt - 1)), cap);\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst st = $('티켓 시도 상태').last().json;\nconst r = readHttp($json);\nif (r.ok && r.body.ticket_id) {\n  return [{ json: { ...st, outcome: 'ok', ticket: { id: r.body.ticket_id, key: st.request_id, category: st.category, priority: st.priority, duplicate: r.body.duplicate === true } } }];\n}\nconst wait = backoffMs(st.try_no);\nif (st.try_no < 3 && shouldRetry(r.status, r.errorCode) && st.deadline_ms - Date.now() > wait + st.reserve_ms + 300) {\n  return [{ json: { ...st, outcome: 'retry', wait_ms: wait } }];\n}\nconst reason = (r.status === 401 || r.status === 403) ? 'auth_failed' : (r.status === null ? 'timeout_or_network' : 'http_' + r.status);\nreturn [{ json: { ...st, outcome: 'fail', reason } }];"
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}// ↓ lib/common.js 원문 복사\nfunction shouldRetry(status, errorCode) {\n  if (status === 429) return true;\n  if (typeof status === 'number' && status >= 500) return true;\n  if (!status && /TIMEDOUT|ABORTED|ECONNRESET|timeout/i.test(String(errorCode || ''))) return true;\n  return false;\n}\nfunction backoffMs(attempt, retryAfterSeconds, capMs) {\n  const cap = capMs || 3000;\n  if (retryAfterSeconds && Number(retryAfterSeconds) > 0) return Math.min(Number(retryAfterSeconds) * 1000, cap);\n  return Math.min(500 * Math.pow(2, Math.max(0, attempt - 1)), cap);\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst st = $('티켓 시도 상태').last().json;\nconst r = readHttp($json);\nif (r.ok && r.body.ticket_id) {\n  return [{ json: { ...st, outcome: 'ok', ticket: { id: r.body.ticket_id, key: st.request_id, category: st.category, priority: st.priority, assignee: st.assignee, duplicate: r.body.duplicate === true } } }];\n}\nconst wait = backoffMs(st.try_no);\nif (st.try_no < 3 && shouldRetry(r.status, r.errorCode) && st.deadline_ms - Date.now() > wait + st.reserve_ms + 300) {\n  return [{ json: { ...st, outcome: 'retry', wait_ms: wait } }];\n}\nconst reason = (r.status === 401 || r.status === 403) ? 'auth_failed' : (r.status === null ? 'timeout_or_network' : 'http_' + r.status);\nreturn [{ json: { ...st, outcome: 'fail', reason } }];"
       },
       "notes": "【역할】 티켓 결과를 판단한다.\n【입력】 티켓 생성 응답 또는 오류, 티켓 시도 상태.\n【처리】 API의 ticket_id를 id로 바꾸고 요청의 priority·category를 붙인다 (WF-12가 ticket.priority를 본다). 429·5xx·timeout만 최대 2회 재시도하고 401·403은 바로 실패로 간다.\n【출력】 ok: {ticket}. retry: {wait_ms}. fail: {reason}.",
       "notesInFlow": false
@@ -346,7 +346,7 @@
         -75
       ],
       "parameters": {
-        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst st = $('티켓 판정').last().json;\nconst r = readHttp($json);\nconst list = r.ok && Array.isArray(r.body.tickets) ? r.body.tickets : [];\nconst row = list.find(t => t.key === st.request_id && t.ticket_id === st.ticket.id);\nconst unverified = !r.ok || !Array.isArray(r.body.tickets) || !row;\nconst foreign = !unverified && row.requester !== st.user;\nreturn [{ json: { ...st, foreign, unverified, stop: foreign || unverified, true_owner: foreign ? row.requester : null } }];"
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst st = $('티켓 판정').last().json;\nconst r = readHttp($json);\nconst list = r.ok && Array.isArray(r.body.tickets) ? r.body.tickets : [];\nconst row = list.find(t => t.key === st.request_id && t.ticket_id === st.ticket.id);\nconst unverified = !r.ok || !Array.isArray(r.body.tickets) || !row;\nconst foreign = !unverified && row.requester !== st.user;\nreturn [{ json: { ...st, foreign, unverified, stop: foreign || unverified,  } }];"
       },
       "notes": "【역할】 돌아온 티켓이 이 사용자의 것인지 판단한다.\n【입력】 중복 주인 조회 응답, 티켓 판정.\n【처리】 확인하지 못한 경우(unverified)와 남의 티켓(foreign)을 구분한다. 둘 다 번호를 내주지 않는다.\n【출력】 {foreign, unverified, stop, true_owner, ticket, ...}.",
       "notesInFlow": false
@@ -698,7 +698,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ item: { id: $json.request_id, title: $json.title, requester: $json.user, category: $json.category, priority: $json.priority, summary: $json.summary }, reason: $json.reason, workflow: 'ticketmoa-handoff' }) }}",
+        "jsonBody": "={{ JSON.stringify({ item: { id: $json.request_id, title: $json.title, requester: $json.user, category: $json.category, priority: $json.priority, assignee: $json.assignee, summary: $json.summary }, reason: $json.reason, workflow: 'ticketmoa-handoff' }) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth"
       },
@@ -865,7 +865,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst base = $('티켓 내용 조립').first().json;\nconst ran = n => { try { return $(n).isExecuted; } catch (e) { return false; } };\nconst urgentAlready = ran('긴급 이력 조회') && !ran('긴급 알림');\nconst httpOk = n => { if (!ran(n)) return false; const a = $(n).all(0); return a.length > 0 && readHttp(a[0].json).ok; };\nconst failAlertOk = ran('장애 알림') ? httpOk('장애 알림') : ran('알림 이력 조회');\nconst judged = ran('티켓 판정') ? $('티켓 판정').last().json : null;\nif (ran('중복 주인 판정') && $('중복 주인 판정').first().json.stop) {\n  return [{ json: { request_id: base.request_id, ticket: null, duplicate: false, dlq: false, alert: false, masked: base.masked, reason: $('중복 주인 판정').first().json.foreign ? 'request_id_conflict' : 'duplicate_unverified', retries: 0 } }];\n}\nif (judged && judged.outcome === 'ok') {\n  return [{ json: { request_id: base.request_id, ticket: judged.ticket, duplicate: judged.ticket.duplicate, dlq: false, alert: urgentAlready || httpOk('긴급 알림'), masked: base.masked, retries: judged.try_no - 1 } }];\n}\nconst fail = ran('시간 초과 처리') ? $('시간 초과 처리').first().json : judged;\nreturn [{ json: { request_id: base.request_id, ticket: null, duplicate: false, dlq: httpOk('DLQ 저장'), alert: failAlertOk, masked: base.masked, reason: (fail && fail.reason) || 'ticket_failed', retries: fail ? fail.try_no - 1 : 0 } }];"
+        "jsCode": "function readHttp(j) {\n  if (j && typeof j.statusCode === \"number\") {\n    const body = j.body && typeof j.body === \"object\" ? j.body : {};\n    return { ok: j.statusCode >= 200 && j.statusCode < 300 && !body.error, status: j.statusCode, body, errorCode: \"\" };\n  }\n  const text = j && j.error ? (typeof j.error === \"string\" ? j.error : JSON.stringify(j.error)) : \"no_response\";\n  return { ok: false, status: null, body: {}, errorCode: text.slice(0, 300) };\n}\nconst base = $('티켓 내용 조립').first().json;\nconst ran = n => { try { return $(n).isExecuted; } catch (e) { return false; } };\nconst urgentAlready = ran('긴급 이력 조회') && !ran('긴급 알림');\nconst httpOk = n => { if (!ran(n)) return false; const a = $(n).all(0); return a.length > 0 && readHttp(a[0].json).ok; };\nconst failAlertOk = ran('장애 알림') ? httpOk('장애 알림') : ran('알림 이력 조회');\nconst judged = ran('티켓 판정') ? $('티켓 판정').last().json : null;\nif (ran('중복 주인 판정') && $('중복 주인 판정').first().json.stop) {\n  return [{ json: { request_id: base.request_id, ticket: null, duplicate: false, dlq: false, alert: false, masked: base.masked, reason: 'duplicate_unavailable', retries: 0 } }];\n}\nif (judged && judged.outcome === 'ok') {\n  return [{ json: { request_id: base.request_id, ticket: judged.ticket, duplicate: judged.ticket.duplicate, dlq: false, alert: urgentAlready || httpOk('긴급 알림'), masked: base.masked, retries: judged.try_no - 1 } }];\n}\nconst fail = ran('시간 초과 처리') ? $('시간 초과 처리').first().json : judged;\nreturn [{ json: { request_id: base.request_id, ticket: null, duplicate: false, dlq: httpOk('DLQ 저장'), alert: failAlertOk, masked: base.masked, reason: (fail && fail.reason) || 'ticket_failed', retries: fail ? fail.try_no - 1 : 0 } }];"
       },
       "notes": "【역할】 이관 결과를 계약 모양으로 만든다.\n【입력】 앞 노드들의 실행 결과.\n【처리】 실제로 성공한 호출만 true로 표시한다. 오류 출력으로 끝난 호출은 false다.\n【출력】 {request_id, ticket|null, duplicate, dlq, alert, masked, reason?, retries}.",
       "notesInFlow": false
@@ -969,6 +969,48 @@
         750,
         400
       ]
+    },
+    {
+      "id": "684a2e05-a3e4-4e45-945b-1bb79e16d26a",
+      "name": "디스코드 알림 내용",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5700,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\n// 고객 응답을 보낸 뒤에 돈다 (응답 시간에 영향 없음).\n// 이번 실행에서 /alerts로 알린 건(긴급 알림, 장애 알림)만 디스코드에도 보낸다. 알림이 없으면 아무것도 보내지 않는다.\nconst ran = n => { try { return $(n).isExecuted; } catch (e) { return false; } };\nconst base = $('티켓 내용 조립').first().json;\nif (base.invalid) return [];\nconst res = $input.first().json;\nlet head;\nif (ran('장애 알림')) head = base.alert ? '🚨 [긴급 · 티켓 실패] 공연 임박 고객의 상담 티켓을 만들지 못했습니다' : '⚠️ [티켓 실패] 상담 티켓을 만들지 못했습니다';\nelse if (ran('긴급 알림')) head = '🚨 [긴급 입장] 공연 임박 고객입니다. 현장 확인이 필요합니다';\nelse return [];\nconst lines = [head, '요청: ' + base.request_id];\nif (res.ticket) lines.push('티켓: ' + res.ticket.id + (res.ticket.priority === 'high' ? ' (긴급)' : ''));\nelse lines.push('사유: ' + (res.reason || 'ticket_failed') + ' · DLQ ' + (res.dlq ? '저장됨' : '저장 실패'));\nlines.push('분류: ' + base.category);\n// 긴급 알림 내용과 요약은 앞에서 연락처를 가린 값이다.\nif (base.alert && typeof base.alert === 'object') {\n  for (const [k, v] of Object.entries(base.alert)) if (v != null && typeof v !== 'object') lines.push(k + ': ' + String(v).slice(0, 100));\n}\nlines.push('문의 요약: ' + String(base.summary).slice(0, 300));\nreturn [{ json: { content: lines.join('\\n').slice(0, 1900) } }];\n"
+      },
+      "notes": "【역할】 담당자 디스코드 메시지를 만든다.\n【입력】 이관 결과 (응답을 보낸 뒤).\n【처리】 이번 실행에서 긴급 알림이나 장애 알림을 보냈을 때만 메시지를 만든다. 요약·긴급 내용은 가린 값이다.\n【출력】 {content} 또는 없음 (알림이 없으면 다음 노드가 돌지 않는다).",
+      "notesInFlow": false
+    },
+    {
+      "id": "70aa2925-ddf2-4706-a559-692e9d599a45",
+      "name": "디스코드 알림",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        6000,
+        0
+      ],
+      "parameters": {
+        "authentication": "webhook",
+        "operation": "sendLegacy",
+        "content": "={{ $json.content }}",
+        "options": {
+          "username": "티켓모아 알림"
+        }
+      },
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "ticketmoaDiscord1",
+          "name": "ticketmoa-discord"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "【역할】 담당자 디스코드 채널에 긴급·장애 알림을 보낸다.\n【입력】 {content}.\n【처리】 Discord 웹후크로 메시지 1건. 웹후크 URL은 Credential 'ticketmoa-discord'에만 있다.\n【출력】 Discord 응답.\n【실패 시】 고객 응답은 이미 나갔다. 오류를 무시하고 끝난다 (/alerts 기록은 그대로).",
+      "notesInFlow": false
     }
   ],
   "connections": {
@@ -1457,6 +1499,28 @@
         [
           {
             "node": "이관 결과 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "이관 결과 응답": {
+      "main": [
+        [
+          {
+            "node": "디스코드 알림 내용",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "디스코드 알림 내용": {
+      "main": [
+        [
+          {
+            "node": "디스코드 알림",
             "type": "main",
             "index": 0
           }

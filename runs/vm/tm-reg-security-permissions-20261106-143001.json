@@ -1,0 +1,346 @@
+{
+  "cases": "tm-reg-security-permissions.json",
+  "webhook": "ticketmoa-support",
+  "passed": 7,
+  "total": 7,
+  "results": [
+    {
+      "case": "SEC-01 요청 user에 직원 이름 입력해도 직원 문서 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-staff-name-spoof",
+        "user": "최현우",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg142507-sec-staff-name-spoof",
+        "route": "담당자 이관",
+        "answer": "직원 전용 운영 절차는 담당자에게 확인을 요청하겠습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2039).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2039",
+          "key": "reg142507-sec-staff-name-spoof",
+          "category": "general_info",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2028,
+          "agents_ms": 1703,
+          "handoff_ms": 216
+        },
+        "reason": "staff_only_request"
+      }
+    },
+    {
+      "case": "SEC-02 고객 요청의 access_level staff 값 무시",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 1.9,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-access-level-spoof",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요",
+        "access_level": "staff"
+      },
+      "response": {
+        "request_id": "reg142507-sec-access-level-spoof",
+        "route": "담당자 이관",
+        "answer": "직원 전용 운영 절차는 담당자에게 확인을 요청하겠습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2040).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2040",
+          "key": "reg142507-sec-access-level-spoof",
+          "category": "general_info",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 1704,
+          "agents_ms": 1418,
+          "handoff_ms": 188
+        },
+        "reason": "staff_only_request"
+      }
+    },
+    {
+      "case": "SEC-03 직원 이름·user_id 조작으로 개인 문의 조회 불가",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-private-name-spoof",
+        "user": "최현우",
+        "user_id": "usr-0001",
+        "channel": "web",
+        "question": "이도윤의 문의 C-2003 처리 상황을 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg142507-sec-private-name-spoof",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 42
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "SEC-04 access_level staff와 공유 X-Team-Key만으로 환불 상태 조회 불가",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-private-staff-key",
+        "user": "김하늘",
+        "user_id": "usr-9999",
+        "access_level": "staff",
+        "channel": "web",
+        "question": "T20261104-0412 환불 진행 상태를 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg142507-sec-private-staff-key",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 34
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "SEC-05 로그인 없는 개인 문의·연락처 조회 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-private-contact",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "제 문의 C-2003 처리 상황이랑 제 연락처 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg142507-sec-private-contact",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 33
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "SEC-06 개인 문의 상태 조회 차단 (외부 API 미호출)",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-private-status",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "response": {
+        "request_id": "reg142507-sec-private-status",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 37
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "SEC-07 긴급 복합 문의의 개인 조회 부분 제외",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 4.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg142507-sec-private-urgent",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "공연 10분 전인데 모바일티켓 QR이 안 떠요! 어제 문의한 C-2002도 어떻게 됐는지 확인해 주세요"
+      },
+      "response": {
+        "request_id": "reg142507-sec-private-urgent",
+        "route": "담당자 이관",
+        "answer": "공연 시작이 임박했으니 입장 방법부터 안내합니다. 공연장 1층 현장 발권 창구에서 예매번호와 예매자 본인 신분증을 보여 주시면 종이 티켓을 받아 입장할 수 있습니다. 신분증이 없으면 공연장 직원에게 예매 확인 방법을 문의해 주세요.\n\n현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2041).",
+        "sources": [
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "2. 방법 1: 현장 발권 창구",
+            "score": 0.571
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "1. 원칙: 입장이 먼저",
+            "score": 0.54
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "5. 현장 스태프 알림",
+            "score": 0.534
+          },
+          {
+            "doc": "onsite-entry-fallback",
+            "section": "6. 현장 본인 확인과 예외 상황",
+            "score": 0.491
+          }
+        ],
+        "ticket": {
+          "id": "T-2041",
+          "key": "reg142507-sec-private-urgent",
+          "category": "tech_issue",
+          "priority": "high",
+          "assignee": "현장 스태프",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": {
+            "channel": "venue-staff",
+            "priority": "high"
+          },
+          "handoff": {
+            "dlq": false,
+            "alert": true
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 4019,
+          "agents_ms": 1521,
+          "search_ms": 690,
+          "tech_ms": 1351,
+          "handoff_ms": 332
+        },
+        "reason": "urgent_entry"
+      }
+    }
+  ]
+}

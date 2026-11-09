@@ -1,0 +1,169 @@
+[
+  {
+    "run": 1,
+    "phase": "idle60_first",
+    "seconds": 6.54586599196773,
+    "passed": false,
+    "response": {
+      "request_id": "fix81-idle-1793933292159451233",
+      "route": "담당자 이관",
+      "answer": "지금은 안내를 준비하지 못해 담당자에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2034).",
+      "sources": [],
+      "ticket": {
+        "id": "T-2034",
+        "key": "fix81-idle-1793933292159451233",
+        "category": "tech_issue",
+        "priority": "normal",
+        "duplicate": false
+      },
+      "agents": {
+        "used": [
+          "ticketmoa-agents",
+          "ticketmoa-search",
+          "ticketmoa-tech",
+          "ticketmoa-handoff"
+        ],
+        "llm_calls": 2,
+        "intents": [
+          "tech_issue"
+        ],
+        "confidence": 0.95,
+        "handoff": {
+          "dlq": false,
+          "alert": false
+        }
+      },
+      "security": {
+        "blocked_by": "",
+        "reason": "",
+        "masked": 0
+      },
+      "timings": {
+        "total_ms": 6343,
+        "agents_ms": 1688,
+        "search_ms": 950,
+        "tech_ms": 3395,
+        "handoff_ms": 216
+      },
+      "reason": "llm_unavailable"
+    }
+  },
+  {
+    "run": 2,
+    "phase": "follow",
+    "seconds": 5.240803495049477,
+    "passed": true,
+    "response": {
+      "request_id": "fix81-idle-1793933310706289826",
+      "route": "자동 답변",
+      "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+      "sources": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.63
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "3. 입장 게이트에서 인식되지 않을 때",
+          "score": 0.533
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "1. 모바일티켓이 열리는 시점",
+          "score": 0.512
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "4. 상담원 연결이 필요한 경우",
+          "score": 0.491
+        }
+      ],
+      "ticket": null,
+      "agents": {
+        "used": [
+          "ticketmoa-agents",
+          "ticketmoa-search",
+          "ticketmoa-tech"
+        ],
+        "llm_calls": 3,
+        "intents": [
+          "tech_issue"
+        ],
+        "confidence": 0.95,
+        "alert": null
+      },
+      "security": {
+        "blocked_by": "",
+        "reason": "",
+        "masked": 0
+      },
+      "timings": {
+        "total_ms": 5086,
+        "agents_ms": 1343,
+        "search_ms": 315,
+        "tech_ms": 3358
+      },
+      "reason": ""
+    }
+  },
+  {
+    "run": 3,
+    "phase": "follow",
+    "seconds": 5.528591142036021,
+    "passed": true,
+    "response": {
+      "request_id": "fix81-idle-1793933327947694138",
+      "route": "자동 답변",
+      "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+      "sources": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.63
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "3. 입장 게이트에서 인식되지 않을 때",
+          "score": 0.533
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "1. 모바일티켓이 열리는 시점",
+          "score": 0.512
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "4. 상담원 연결이 필요한 경우",
+          "score": 0.491
+        }
+      ],
+      "ticket": null,
+      "agents": {
+        "used": [
+          "ticketmoa-agents",
+          "ticketmoa-search",
+          "ticketmoa-tech"
+        ],
+        "llm_calls": 3,
+        "intents": [
+          "tech_issue"
+        ],
+        "confidence": 0.95,
+        "alert": null
+      },
+      "security": {
+        "blocked_by": "",
+        "reason": "",
+        "masked": 0
+      },
+      "timings": {
+        "total_ms": 5379,
+        "agents_ms": 1685,
+        "search_ms": 349,
+        "tech_ms": 3241
+      },
+      "reason": ""
+    }
+  }
+]

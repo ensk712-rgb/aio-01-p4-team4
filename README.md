@@ -47,7 +47,7 @@
 - 환불 확정이나 결제 취소처럼 돈이 움직이는 처리: 에이전트가 실행하지 않고, 고객 확정 뒤 상담원에게 넘깁니다.
 - 환불 예정액 30만원 초과, 관람일 전날 17시 이후, 공연 당일 취소 요청
 - 강한 부정 감정, 상담원 연결을 직접 요청한 경우
-- 현장 스태프 전용 절차를 묻는 일반 고객 질문: `staff-entry-manual`은 `access_level`이 `staff`인 사용자만 검색합니다.
+- 현장 스태프 전용 절차를 묻는 요청: 로그인이 없어 직원을 증명할 수 없으므로 `staff-entry-manual`은 누구도 검색하지 못합니다. 담당자에게 넘깁니다.
 
 ## 전체 흐름
 
@@ -62,7 +62,7 @@ flowchart TD
   J -- 아니오 --> C["ticketmoa-agents<br/>Supervisor 분류"]
   C --> P{"Plan route<br/>규칙으로 경로 결정"}
   P -- 정보 부족 --> R2["보완 질문<br/>3회째는 이관"]
-  P -- "기술, 앱, 일반 정보" --> S["ticketmoa-search<br/>권한별 문서 검색"]
+  P -- "기술, 앱, 일반 정보" --> S["ticketmoa-search<br/>공개 문서 검색"]
   P -- 복합 문의 --> SP["search와 payment<br/>병렬 호출"]
   P -- "조회, 결제 오류" --> PAY["ticketmoa-payment<br/>본인 건만 조회"]
   P -- 환불 --> RF["ticketmoa-refund<br/>규칙으로 금액 계산"]
@@ -95,7 +95,7 @@ flowchart TD
 | 장치 | 동작 |
 | --- | --- |
 | 팀 키 | 본체 웹훅은 Header Auth로 막혀 있고, 키가 없거나 틀리면 403 |
-| 권한 | 질문 글이 아니라 `user`로 조회한 `access_level`로 판단하고, 직원 문서는 검색 전에 거름 |
+| 권한 | 문의는 요청 `user`와 기록 `requester`가 일치할 때만 답하고, 공개 경로에서 직원 저장소를 검색하지 않음. 로그인이 없어 다른 사람 이름을 입력하는 사칭은 막지 못함 |
 | 근거 검증 | 검증 Agent가 근거·정책·개인정보를 확인하고, 통과하지 못하면 이관 |
 | 부정 사용 차단 | 가상 IP 정책과 반복 요청(같은 사용자·같은 질문 60초에 6번째)을 LLM 앞에서 차단. 기록 조회가 실패하면 막지 않고 통과 |
 | 개인정보 | 응답과 로그에서 연락처를 가리고 가린 개수는 `security.masked`에 표시 |
@@ -117,21 +117,24 @@ flowchart TD
 | `ticketmoa-search` | `ticketmoa-search` | 13 | 권한별 메모리 키 검색 | 정예진 |
 | `ticketmoa-tech` | `ticketmoa-tech` | 17 | 근거 기반 답변 작성, 공연 직전 대체 입장 안내 | 정예진 |
 | `ticketmoa-payment` | `ticketmoa-payment` | 11 | 본인 예매·문의 조회, 연락처 가림 | 심환석 |
-| `ticketmoa-handoff` | `ticketmoa-handoff` | 29 | 요약 티켓, 중복 방지, 재시도, DLQ, 알림 | 심환석 |
-| `ticketmoa-errors` | 없음 (Error Workflow) | 3 | 워크플로우 오류 처리 | 심환석 |
+| `ticketmoa-handoff` | `ticketmoa-handoff` | 33 | 요약 티켓, 중복 방지, 재시도, DLQ, 알림 | 심환석 |
+| `ticketmoa-errors` | 없음 (Error Workflow) | 9 | 오류 정보 정규화, 중복 판정, `/alerts`·디스코드 동시 알림 | 심환석 |
+| `ticketmoa-ops` (가산) | `ticketmoa-ops` | 6 | 티켓·알림·DLQ·로그·장애 설정 읽기 전용 조회 | 심환석 |
 
 ## 현재 상태
 
-2026-11-05 15:10~15:14, `main` `ea1a6c9`를 **팀 VM**에 올리고 지식 문서 42청크로 색인한 뒤 시험한 결과입니다. 보고서는 `runs/vm/`에 있고, 모든 시험의 버전과 환경은 `docs/EXECUTION-RESULT.md` 0절에 있습니다.
+2026-11-07 18:33~18:43 KST, **팀 VM**에 지식 문서 42청크로 색인하고 예열한 뒤 시험한 결과입니다. 보고서는 `runs/vm/`에 있고, 모든 시험의 버전과 환경은 `docs/EXECUTION-RESULT.md` 0절(T행)에 있습니다. **예열 후 한 회차의 전체 통과이며, 같은 워크플로우의 예열 없는 S행은 공통 50/51입니다.**
 
 | 시험 | 결과 |
 | --- | --- |
-| 공통 시나리오 (`cases/common.json`) 3회 | 50/51 (WF-01 1회 8.2초, 기준 8초) |
-| 팀 필수 시나리오 (TM-01~08, TM-13) 1회 | 9/9 |
-| 팀 가산 시나리오 (TM-09~12) 1회 | 4/4 |
-| 정상 문의 `bench -n 5` | p50 5.40초, p95 5.90초, 실패 0/5 |
+| 공통 시나리오 (`cases/common.json`) 3회 | 51/51 |
+| 팀 시나리오 (`cases/team.json`) 1회 | 13/13 |
+| 보안 시나리오 (`cases/security-permissions.json`) 1회 | 8/8 |
+| 정상 문의 `bench -n 5` | p50 5.61초, p95 6.59초, 실패 0/5 |
 
-WF-01은 재시작 직후 1회차에 8.2초가 걸렸고 답은 정상이었습니다. 2·3회차는 통과했습니다. 이전 시험에서는 LLM 시간 제한으로 이관된 경우도 있어, 해결된 것으로 보지 않습니다.
+- **WF-01:** 예열 뒤 5.3 / 5.2 / 5.5초로 3/3이지만 첫 예열 호출은 8.8초였습니다. 예열 없는 재시작 후 첫 호출은 9.9초, 7.4초, 7.9초, 8.0초였습니다. 예열하면 첫 호출 지연은 사라지지만(측정 4.80~5.76초) 모델 응답 변동은 남아 간헐 지연은 미결입니다.
+- **사칭:** 로그인이 없어 요청의 `user`는 본인 확인이 아닙니다. 내 이름으로 남의 건은 볼 수 없지만, 다른 사람 이름을 입력하면 그 사람의 건이 조회됩니다(가짜 데이터, 연락처는 가림).
+- **재색인 직후:** 첫 공개 검색이 `index_unavailable`일 수 있어, 재색인 뒤 잠시 기다렸다가 시연합니다.
 
 ## 디렉터리
 
@@ -151,7 +154,8 @@ aio-01-p4-team4/
 │   ├── ticketmoa-tech.json        # 정예진
 │   ├── ticketmoa-payment.json     # 심환석
 │   ├── ticketmoa-handoff.json     # 심환석
-│   └── ticketmoa-errors.json      # 심환석
+│   ├── ticketmoa-errors.json      # 심환석
+│   └── ticketmoa-ops.json         # 심환석 (가산)
 │
 ├── knowledge/                 # 지식 문서 8개 (staff-entry-manual만 스태프 전용)
 ├── data/                      # users.json 5명, records.json 6건 (가짜 데이터)
@@ -183,8 +187,8 @@ aio-01-p4-team4/
     ├── TEAM-CHARTER.md        # 팀 헌장
     ├── TODO.md                # 교시별 일정
     ├── WORKFLOW-DESIGN.md     # 산출물 1: 워크플로우 설계서
-    ├── RAG-ARCHITECTURE.md    # 산출물 2: RAG 설계서 (초안, 측정 값 작성 중)
-    ├── EXECUTION-RESULT.md    # 산출물 3: 실행 결과서 (작성 예정)
+    ├── RAG-ARCHITECTURE.md    # 산출물 2: RAG 설계서
+    ├── EXECUTION-RESULT.md    # 산출물 3: 실행 결과서
     ├── daily/                 # 데일리 기록 80·81·82
     └── images/                # 기획 구조도, 오케스트레이션 구조도
 ```
@@ -200,7 +204,7 @@ git clone https://github.com/ensk712-rgb/aio-01-p4-team4.git
 cd aio-01-p4-team4
 git switch test                         # 통합 브랜치에서 시작
 git switch -c feat/<이름>-<파일>        # 예: feat/jeongyejin-search
-node --test lib/test/*.test.js          # 공통 함수 테스트 (16개 통과해야 함)
+node --test lib/test/*.test.js          # 공통 함수 테스트 (전부 통과해야 함)
 ssh -o BatchMode=yes aio-t4 "whoami"   # toor가 나오면 서버 접속 준비 끝
 ```
 
@@ -210,14 +214,14 @@ ssh -o BatchMode=yes aio-t4 "whoami"   # toor가 나오면 서버 접속 준비 
 
 ```powershell
 scp workflows/<내 파일>.json aio-t4:~/aio-01-p4-team4/workflows/
-ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflows/<내 파일>.json && uv run tools/flow.py push workflows/<내 파일>.json && sleep 10 && uv run --env-file .env tools/reindex.py'"
+ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py check workflows/<내 파일>.json && uv run tools/flow.py push workflows/<내 파일>.json && sleep 10 && uv run --env-file .env tools/reindex.py && sleep 5 && uv run --env-file .env tools/demo.py --warm'"
 ```
 
 전체 배포는 리드가 `main` 기준으로 한다.
 
 ```powershell
 scp -r workflows knowledge data cases config lib requests tools aio-t4:~/aio-01-p4-team4/
-ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/*.json && sleep 10 && uv run --env-file .env tools/reindex.py'"
+ssh aio-t4 "bash -lc 'cd ~/aio-01-p4-team4 && uv run tools/flow.py push workflows/*.json && sleep 10 && uv run --env-file .env tools/reindex.py && sleep 5 && uv run --env-file .env tools/demo.py --warm'"
 ```
 
 - **`push`는 공용 n8n을 다시 켠다.** 한 사람이 올려도 팀 전체의 실행이 끊기고, In-Memory 색인이 사라질 수 있다. 그래서 올리기 전에 팀 채팅에 알리고, 올린 뒤에는 `tools/reindex.py`로 색인을 다시 돌린다. 이 스크립트는 OpenAI 임베딩을 호출한다.
@@ -252,7 +256,7 @@ GitHub에서 `test`로 PR을 열면 리드가 검토하고 병합한다. 리드�
 ```bash
 uv run tools/flow.py push workflows/*.json
 sleep 10
-uv run --env-file .env tools/reindex.py
+uv run --env-file .env tools/reindex.py && sleep 5 && uv run --env-file .env tools/demo.py --warm
 uv run --env-file .env tools/flow.py test cases/common.json --webhook ticketmoa-support -v
 uv run --env-file .env tools/flow.py test cases/team.json -v
 ```
@@ -303,7 +307,7 @@ curl -s -X POST http://localhost:8800/logs-reset     # 시험 전에 비우기
 
 ```bash
 cd ~/aio-01-p4-team4
-uv run --env-file .env tools/demo.py --warm    # 시연 전 예열. 쉬고 난 뒤 첫 요청은 느리거나 이관될 수 있다
+uv run --env-file .env tools/demo.py --warm    # 시연 전 예열. 재시작 뒤 첫 호출의 지연을 예열 호출이 대신 낸다. 쉬고 난 뒤 첫 요청도 느리거나 이관될 수 있다
 uv run --env-file .env tools/demo.py --pause   # 전체, 단계마다 Enter
 ```
 

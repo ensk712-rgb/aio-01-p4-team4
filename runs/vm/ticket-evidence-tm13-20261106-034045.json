@@ -1,0 +1,72 @@
+{
+  "cases": "tm-tm13.json",
+  "webhook": "ticketmoa-support",
+  "passed": 1,
+  "total": 1,
+  "results": [
+    {
+      "case": "TM-13 환불 30만원 초과 → 이관",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.6,
+      "status": 200,
+      "request": {
+        "request_id": "ev033521-tm13",
+        "user": "정민아",
+        "channel": "web",
+        "question": "다음 달 콘서트 4장 취소하면 얼마 돌려받아요? 문의번호 C-2006"
+      },
+      "response": {
+        "request_id": "ev033521-tm13",
+        "route": "담당자 이관",
+        "answer": "이 환불 요청은 금액을 안내하기 전에 상담원 확인이 필요합니다. 이미 처리된 건, 관람 당일 취소, 30만원을 넘는 환불 같은 예외는 상담원이 판단합니다. 상담원에게 접수했습니다. 접수 번호는 T-2049입니다.",
+        "sources": [
+          {
+            "doc": "refund-policy",
+            "section": "2. 취소 수수료",
+            "score": 0.621
+          },
+          {
+            "doc": "refund-policy",
+            "section": "5. 공연별 규정과 환불 금액 확인",
+            "score": 0.611
+          }
+        ],
+        "ticket": {
+          "id": "T-2049",
+          "key": "ev033521-tm13",
+          "category": "refund_exception",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-refund"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "refund_request",
+            "booking_lookup"
+          ],
+          "confidence": 0.95,
+          "pending_action": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2415,
+          "agents_ms": 1427,
+          "refund_ms": 895
+        },
+        "reason": "over_limit"
+      }
+    }
+  ]
+}

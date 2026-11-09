@@ -17,7 +17,7 @@
     },
     {
       "id": "2766567d-338d-ca09-606c-ee2c91c091ce",
-      "name": "알림 내용 조립",
+      "name": "오류 정보 정규화",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -25,9 +25,9 @@
         0
       ],
       "parameters": {
-        "jsCode": "\nconst e = $json;\nreturn [{ json: {\n  workflow: e.workflow?.name ?? '?',\n  node: e.execution?.lastNodeExecuted ?? e.execution?.error?.node?.name ?? '?',\n  execution_id: e.execution?.id ?? '',\n  at: new Date().toISOString(),\n  severity: 'critical',\n  reason: 'unexpected',\n} }];"
+        "jsCode": "// ↓ lib/common.js의 normalizeErrorEvent를 복사\nconst ERROR_WORKFLOW_SLUGS = ['support', 'agents', 'refund', 'payment', 'handoff', 'errors', 'tech', 'search', 'index', 'ops'];\nconst ERROR_TYPES = new Set(['Error', 'TypeError', 'RangeError', 'ReferenceError', 'SyntaxError', 'TimeoutError', 'AbortError', 'NodeApiError', 'NodeOperationError', 'WorkflowError']);\nfunction normalizeErrorEvent(event, now) {\n  const e = event && typeof event === 'object' ? event : {};\n  const workflow = e.workflow && typeof e.workflow === 'object' ? e.workflow : {};\n  const execution = e.execution && typeof e.execution === 'object' ? e.execution : {};\n  const error = execution.error && typeof execution.error === 'object' ? execution.error : {};\n  const rawName = String(workflow.name || '').toLowerCase();\n  const slug = ERROR_WORKFLOW_SLUGS.find(name => new RegExp(`(^|[^a-z0-9])ticketmoa-${name}([^a-z0-9]|$)`).test(rawName));\n  const workflowIdRaw = String(workflow.id || '');\n  const workflowId = /^[A-Za-z0-9_-]{1,80}$/.test(workflowIdRaw) ? workflowIdRaw : 'unknown';\n  const executionIdRaw = String(execution.id || '');\n  const executionId = /^\\d{1,24}$/.test(executionIdRaw) ? executionIdRaw : '';\n  const typeRaw = String(error.name || '');\n  const errorType = ERROR_TYPES.has(typeRaw) ? typeRaw : 'unknown_error';\n  const nodeRaw = String(execution.lastNodeExecuted || error.node?.name || '');\n  const safeNode = /^[\\p{L}\\p{N}][\\p{L}\\p{N} ._()/-]{0,79}$/u.test(nodeRaw)\n    && !/[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}/.test(nodeRaw)\n    && !/\\b\\d{2,3}[-. ]\\d{3,4}[-. ]\\d{4}\\b/.test(nodeRaw);\n  const normalized = {\n    at: new Date().toISOString(), workflow_id: workflowId,\n    workflow: slug ? `ticketmoa-${slug}` : 'ticketmoa-unknown',\n    execution_id: executionId, error_type: errorType,\n    failed_node: safeNode ? nodeRaw : 'unknown', severity: 'critical',\n    reason: 'unexpected_execution_error',\n  };\n  normalized.dedupe_key = executionId ? `error-alert:${workflowId}:${executionId}` : '';\n  return normalized;\n}\nconst normalized = normalizeErrorEvent($json);\nreturn [{ json: normalized }];\n// ↑ lib/common.js 복사 끝"
       },
-      "notes": "【역할】 알림에 넣을 값만 고른다.\n【입력】 오류 정보.\n【처리】 워크플로우 이름, 노드 이름, 실행 ID, 시각만 남긴다. 오류 메시지에 질문 원문이나 연락처가 들어갈 수 있어 넣지 않는다.\n【출력】 {workflow, node, execution_id, at, severity, reason}.",
+      "notes": "Error Trigger payload에서 허용된 워크플로우 ID·이름·실행 ID·오류 유형·실패 노드·시각만 만든다. 요청 본문, 오류 메시지, 스택, 토큰, 사용자 정보는 전달하지 않는다. 정규화 함수는 lib/common.js와 같다.",
       "notesInFlow": false
     },
     {
@@ -36,7 +36,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        600,
+        1200,
         0
       ],
       "parameters": {
@@ -53,11 +53,11 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
+        "jsonBody": "={{ JSON.stringify($('오류 정보 정규화').first().json) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth"
       },
-      "notes": "【역할】 담당자에게 알린다.\n【입력】 알림 내용.\n【처리】 POST /alerts.\n【출력】 {stored, count}.\n【실패 시】 알림도 실패하면 더 할 수 있는 일이 없다. 실행 기록에만 남는다. 자기 자신을 오류 처리기로 지정하지 않아 무한 반복은 없다.",
+      "notes": "POST /alerts. Discord와 병렬로 실행한다. 데이터 API 실패는 오류 출력에서 종료하고 Discord 경로를 막지 않는다. 이 워크플로우에는 errorWorkflow를 설정하지 않아 재귀 실행하지 않는다.",
       "notesInFlow": false,
       "onError": "continueErrorOutput",
       "credentials": {
@@ -66,6 +66,186 @@
           "name": "ticketmoa-data-api"
         }
       }
+    },
+    {
+      "id": "fae60c24-7932-4656-a5ba-7a3b02f0bd69",
+      "name": "디스코드 알림",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "authentication": "webhook",
+        "operation": "sendLegacy",
+        "content": "={{ '🔥 [워크플로우 오류] ' + $('오류 정보 정규화').first().json.workflow + ' (' + $('오류 정보 정규화').first().json.workflow_id + ')\\n유형: ' + $('오류 정보 정규화').first().json.error_type + '\\n실패 노드: ' + $('오류 정보 정규화').first().json.failed_node + '\\n실행 ID: ' + ($('오류 정보 정규화').first().json.execution_id || '-') + '\\n시각: ' + $('오류 정보 정규화').first().json.at + '\\nn8n 실행 기록에서 확인해 주세요.' }}",
+        "options": {
+          "username": "티켓모아 알림"
+        }
+      },
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "ticketmoaDiscord1",
+          "name": "ticketmoa-discord"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "정규화된 허용 필드만 Discord로 보낸다. 오류 메시지·질문·연락처·토큰은 전송하지 않는다. 실패는 무시하고 종료한다.",
+      "notesInFlow": false
+    },
+    {
+      "id": "a2822f27-ad7e-4c15-8b3f-7f1dddc85ab2",
+      "name": "중복 키 있음?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        540,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "error-dedupe-key",
+              "leftValue": "={{ Boolean($json.dedupe_key) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "실행 ID가 없으면 중복 판단 없이 알림을 보낸다."
+    },
+    {
+      "id": "fa64af49-a0a2-4713-b2f3-49660e28d334",
+      "name": "중복 이력 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -80
+      ],
+      "parameters": {
+        "url": "={{ 'http://data-api:8800/cache/' + encodeURIComponent($('오류 정보 정규화').first().json.dedupe_key) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "실행 ID별 알림 마커를 확인한다. 404는 미기록으로 처리한다. 조회 오류도 알림을 막지 않고 별도 출력으로 보낸다."
+    },
+    {
+      "id": "d367b62a-e82f-43d9-a7d5-859d0695e8f4",
+      "name": "중복 알림?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "error-already-alerted",
+              "leftValue": "={{ $json.duplicate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "같은 실행 ID의 알림 마커가 있을 때만 알림을 생략한다. 캐시 조회 실패는 Error Workflow 실행 기록에 남고 알림은 계속한다."
+    },
+    {
+      "id": "9fc3b8d4-a84b-48e0-9b1d-9d590c2c4de2",
+      "name": "중복 알림 기록",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        -80
+      ],
+      "parameters": {
+        "url": "={{ 'http://data-api:8800/cache/' + encodeURIComponent($('오류 정보 정규화').first().json.dedupe_key) }}",
+        "options": {
+          "timeout": 1000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: { dedupe_key: $('오류 정보 정규화').first().json.dedupe_key, sent: true }, ttl: 86400 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "동일 실행의 알림 중복을 24시간 막는다. 마커 저장이 실패해도 알림 두 경로는 계속 진행한다. 동시 실행의 원자적 중복 방지는 데이터 API가 제공하지 않아 보장하지 않는다."
+    },
+    {
+      "id": "aa8b23d2-27d0-4cc2-929d-bd6ad92c185b",
+      "name": "중복 판정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        -80
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js의 shouldSendErrorAlert를 복사\nfunction shouldSendErrorAlert(cacheResponse, dedupeKey) {\n  if (!dedupeKey) return true;\n  const response = cacheResponse && typeof cacheResponse === 'object' ? cacheResponse : {};\n  const value = response.body && typeof response.body === 'object' ? response.body.value : null;\n  return !(response.statusCode === 200 && value && value.dedupe_key === dedupeKey && value.sent === true);\n}\nconst sendAlert = shouldSendErrorAlert($json, $('오류 정보 정규화').first().json.dedupe_key);\nreturn [{ json: { duplicate: !sendAlert } }];\n// ↑ lib/common.js 복사 끝"
+      },
+      "notes": "/cache 조회값을 공통 함수로 판정한다. 캐시 장애나 미기록이면 알림을 계속한다."
     }
   ],
   "connections": {
@@ -73,18 +253,116 @@
       "main": [
         [
           {
-            "node": "알림 내용 조립",
+            "node": "오류 정보 정규화",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "알림 내용 조립": {
+    "오류 정보 정규화": {
+      "main": [
+        [
+          {
+            "node": "중복 키 있음?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 키 있음?": {
+      "main": [
+        [
+          {
+            "node": "중복 이력 조회",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "장애 알림 전송",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "디스코드 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 이력 조회": {
+      "main": [
+        [
+          {
+            "node": "중복 판정",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "장애 알림 전송",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "디스코드 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 알림?": {
+      "main": [
+        [
+        ],
+        [
+          {
+            "node": "중복 알림 기록",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "중복 알림 기록": {
       "main": [
         [
           {
             "node": "장애 알림 전송",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "디스코드 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "장애 알림 전송",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "디스코드 알림",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "중복 판정": {
+      "main": [
+        [
+          {
+            "node": "중복 알림?",
             "type": "main",
             "index": 0
           }

@@ -14,12 +14,26 @@ TM_TARGET=vm python3 webapp/app.py          # VM n8n (.env의 TM_VM_N8N_URL)
 
 브라우저에서 `http://127.0.0.1:8080`을 연다. 포트는 `TM_WEB_PORT`로 바꾼다. 오른쪽 위 예시 버튼을 누르면 질문을 자동으로 입력·전송한다.
 
+| 주소 | 화면 |
+| --- | --- |
+| `/` | 고객 상담 채팅 + 흐름 그래프 |
+| `/admin` | 관리자: 대화 기록, 지표, 장애 패널, 티켓·알림·DLQ·실행 기록·장애 스위치 |
+| `/demo` | 발표용: 왼쪽 고객 채팅(그래프 없이) + 오른쪽 관리자. 왼쪽에서 보낸 문의가 오른쪽에 바로 뜬다 |
+
 | 환경 변수 (.env) | 설명 |
 | --- | --- |
 | `TM_TEAM_KEY` | `X-Team-Key` (필수) |
 | `TM_TARGET` | `local`(기본) · `vm` |
 | `TM_N8N_URL` / `TM_VM_N8N_URL` | 대상별 n8n 주소 |
 | `TM_WEB_HOST` / `TM_WEB_PORT` | 웹앱 주소 (기본 `127.0.0.1:8080`) |
+| `TM_DATA_API_URL` / `TM_DATA_API_KEY` | local일 때 관리자 화면이 읽는 데이터 API (기본 `http://localhost:8800`) |
+| `TM_ADMIN_PASSWORD` | 관리자 경로 Basic 인증. `127.0.0.1`이 아닌 주소로 열 때는 필수 |
+
+## 관리자 화면
+
+- **대화 기록**: `/api/chat`을 지나간 요청·응답을 `webapp/var/chats.jsonl`(git 제외)에 연락처를 가려 남긴다. 최근 500건. 화면의 "대화 기록 비우기"나 파일 삭제로 비운다.
+- **장애 패널**: 고객에게는 모두 "담당자 이관"으로 보이는 건을 `reason`으로 나눈다 (`static/reasons.js`). 장애(분류·조회·LLM·티켓 실패), 품질(근거 없음·검증 불통과), 정상(설계대로 이관·거절·차단), 미분류(분류표에 없는 새 reason). 일부러 장애를 내지 않고 실제로 난 것만 보여 준다.
+- **운영 데이터**: local은 데이터 API를 직접 읽고, vm은 n8n 웹훅 `ticketmoa-ops`(읽기 전용, `workflows/ticketmoa-ops.json`)를 거친다. VM 데이터 API는 밖에서 열려 있지 않기 때문이다. VM에 `ticketmoa-ops`가 없으면 탭에 그렇게 표시하고 대화 기록·장애 패널은 그대로 동작한다.
 
 ## 예시 민원 (`examples.json`)
 

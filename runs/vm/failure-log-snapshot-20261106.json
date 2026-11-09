@@ -1,0 +1,179 @@
+{
+  "captured": "2026-11-06 KST, 웹 터미널에서 읽기 전용 수동 조회(팀장 실행). 마지막 로그 02:54:27 UTC 이후 새 로그 없음",
+  "deployed_hash_prefix": {
+    "workflows/ticketmoa-support.json": "a2c90457fd69",
+    "workflows/ticketmoa-handoff.json": "a0ef511cc226",
+    "lib/common.js": "e9d2e777f484"
+  },
+  "logs": {
+    "live_total": 875,
+    "with_failure_kind": 108,
+    "last_finished_at": "2026-11-06T02:54:27.173Z",
+    "by_status_reason_kind": [
+      [
+        "success",
+        "",
+        "",
+        24
+      ],
+      [
+        "rejected",
+        "",
+        "",
+        18
+      ],
+      [
+        "success",
+        "payment_error_handoff",
+        "",
+        12
+      ],
+      [
+        "success",
+        "low_confidence_or_missing",
+        "",
+        6
+      ],
+      [
+        "success",
+        "clarify_limit_reached",
+        "",
+        6
+      ],
+      [
+        "success",
+        "not_owner",
+        "",
+        6
+      ],
+      [
+        "success",
+        "injection_pattern",
+        "",
+        6
+      ],
+      [
+        "error",
+        "agents_failed",
+        "dependency",
+        6
+      ],
+      [
+        "error",
+        "payment_failed",
+        "dependency",
+        6
+      ],
+      [
+        "success",
+        "urgent_entry",
+        "",
+        6
+      ],
+      [
+        "success",
+        "unregistered_intent",
+        "",
+        6
+      ],
+      [
+        "error",
+        "verification_failed",
+        "verification_rejected",
+        3
+      ],
+      [
+        "success",
+        "writer_staff_only_terms",
+        "",
+        2
+      ],
+      [
+        "error",
+        "llm_unavailable",
+        "dependency",
+        1
+      ]
+    ],
+    "samples": [
+      {
+        "request_id": "fix81-idle-1793933292159451233",
+        "status": "error",
+        "reason": "llm_unavailable",
+        "failure_kind": "dependency",
+        "verification_issues": [],
+        "ticket": "T-2034",
+        "finished_at": "2026-11-06T02:48:18.683Z"
+      },
+      {
+        "request_id": "fix81-1793933437132697712-wf05",
+        "status": "error",
+        "reason": "verification_failed",
+        "failure_kind": "verification_rejected",
+        "verification_issues": [
+          "not_relevant",
+          "not_grounded"
+        ],
+        "ticket": "T-2037",
+        "finished_at": "2026-11-06T02:51:29.745Z"
+      },
+      {
+        "request_id": "fix81-1793933437132697712-wf10",
+        "status": "error",
+        "reason": "agents_failed",
+        "failure_kind": "dependency",
+        "verification_issues": [],
+        "ticket": "T-2039",
+        "finished_at": "2026-11-06T02:52:01.698Z"
+      }
+    ]
+  },
+  "tickets": {
+    "total": 41,
+    "by_category": {
+      "general_info": 10,
+      "unknown": 7,
+      "tech_issue": 6,
+      "payment_error": 5,
+      "booking_lookup": 5,
+      "refund_exception": 4,
+      "refund": 2,
+      "human_request": 1,
+      "scalping_report": 1
+    },
+    "rows": [
+      [
+        "T-2015",
+        "boundary81-1793930896583337911-1",
+        "unknown",
+        "normal"
+      ],
+      [
+        "T-2016",
+        "boundary81-1793930908454232660-6",
+        "refund",
+        "normal"
+      ],
+      [
+        "T-2017",
+        "boundary81-1793930909789066174-8",
+        "payment_error",
+        "normal"
+      ],
+      [
+        "T-2018",
+        "boundary81-1793930912918059150-9",
+        "refund_exception",
+        "normal"
+      ],
+      [
+        "T-2019",
+        "boundary81-1793930915503644836-10",
+        "refund_exception",
+        "normal"
+      ]
+    ]
+  },
+  "alerts": 44,
+  "dlq": 9
+}

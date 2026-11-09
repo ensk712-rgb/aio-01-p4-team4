@@ -1,0 +1,83 @@
+[09:33:28] backup
+agents nodes 17 diff 0 conn True errWF ticketmoaErrors01
+errors nodes 9 diff 0 conn True errWF None
+handoff nodes 33 diff 0 conn True errWF ticketmoaErrors01
+index nodes 12 diff 0 conn True errWF None
+ops nodes 6 diff 0 conn True errWF ticketmoaErrors01
+payment nodes 11 diff 0 conn True errWF ticketmoaErrors01
+refund nodes 38 diff 0 conn True errWF ticketmoaErrors01
+search nodes 13 diff 0 conn True errWF None
+support nodes 45 diff 0 conn True errWF ticketmoaErrors01
+tech nodes 17 diff 0 conn True errWF None
+deployed_mismatch 0
+before {"tickets": 70, "alerts": 87, "dlq": 28, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[09:33:35] files-differ
+CHG cases/README.md
+[09:33:35] copy-files
+[09:33:35] no-node
+[09:33:35] push
+pushed search:    POST http://localhost:5678/webhook/ticketmoa-search
+pushed index:    POST http://localhost:5678/webhook/ticketmoa-index
+pushed tech:    POST http://localhost:5678/webhook/ticketmoa-tech
+pushed agents:    POST http://localhost:5678/webhook/ticketmoa-agents-verify
+pushed payment:    POST http://localhost:5678/webhook/ticketmoa-payment
+pushed refund:    POST http://localhost:5678/webhook/ticketmoa-refund
+pushed handoff:    POST http://localhost:5678/webhook/ticketmoa-handoff
+pushed errors: ✔ pushed 'ticketmoa-errors' (id ticketmoaErrors01)
+pushed ops:    POST http://localhost:5678/webhook/ticketmoa-ops
+pushed support:    POST http://localhost:5678/webhook/ticketmoa-support
+[09:37:34] restart-n8n
+[09:37:42] healthz-ok-after-8s
+[09:37:47] deployed-compare
+agents nodes 17 diff 0 conn True errWF ticketmoaErrors01
+errors nodes 9 diff 0 conn True errWF None
+handoff nodes 33 diff 0 conn True errWF ticketmoaErrors01
+index nodes 12 diff 0 conn True errWF None
+ops nodes 6 diff 0 conn True errWF ticketmoaErrors01
+payment nodes 11 diff 0 conn True errWF ticketmoaErrors01
+refund nodes 38 diff 0 conn True errWF ticketmoaErrors01
+search nodes 13 diff 0 conn True errWF None
+support nodes 45 diff 0 conn True errWF ticketmoaErrors01
+tech nodes 17 diff 0 conn True errWF None
+deployed_mismatch 0
+[09:37:50] reindex
+문서 8/8 (일반 7, 스태프 1)
+청크 42개, 길이 최소 116 · 중앙값 229 · 최대 432 (문자 수)
+색인 응답 outcome: store_output_received
+색인 단계: 응답상 완료 — 청크 수는 저장 전 수량, 실제 저장 수·직원 저장소는 미검증
+공개 검색: 실패 또는 미검증 — 검색 오류: index_unavailable
+직원 문서 비노출: PASS (승인된 공개 문서의 본문·절 확인, 반환 결과 범위)
+직원 저장소 실제 저장: 미검증 — 공개 Search에서 차단 유지, 별도 제한된 검증 필요
+저장 레코드 전수·실패 시 자동 롤백: 미검증/미구현
+reindex_seconds 4.3
+search {'indexed': True, 'staff_indexed': None, 'error': None} 3
+[09:38:00] warm
+예열 1: HTTP 200, 8.8초, 자동 답변
+예열 2: HTTP 200, 6.1초, 자동 답변
+[09:38:15] copy-cases
+[09:38:15] common
+common_exit=0
+Passed 51/51
+report: runs/tm-reg-common-20261107-094000.json
+after-common {"tickets": 77, "alerts": 90, "dlq": 30, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[09:40:00] team
+team_exit=0
+Passed 13/13
+report: runs/tm-reg-team-20261107-094054.json
+after-team {"tickets": 83, "alerts": 90, "dlq": 30, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[09:41:59] security
+security_exit=0
+Passed 8/8
+report: runs/tm-reg-security-permissions-20261107-094212.json
+after-security {"tickets": 86, "alerts": 91, "dlq": 30, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[09:43:17] bench
+bench_exit=0
+✔ #4 · HTTP 200 · 5.61s · route=자동 답변
+✔ #5 · HTTP 200 · 5.44s · route=자동 답변
+p50 5.61s · p95 6.59s · max 6.59s · failures 0/5
+report: runs/bench-ticketmoa-support-20261107-094346.json
+final {"tickets": 86, "alerts": 91, "dlq": 30, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[09:43:46] restore-switches
+✔ fault switch: {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}
+✔ OpenAI credential: real key from .env restored
+[09:43:51] DONE

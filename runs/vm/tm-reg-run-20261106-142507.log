@@ -1,0 +1,54 @@
+[14:25:07] backup-handoff
+[14:25:07] copy
+before {"tickets": 27, "alerts": 77, "dlq": 24, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:25:07] check-push
+[14:25:34] restart-n8n
+[14:25:39] healthz-ok-after-6s
+[14:25:44] deployed-compare
+agents nodes 17 diff 0 conn True
+errors nodes 9 diff 0 conn True
+handoff nodes 33 diff 0 conn True
+index nodes 12 diff 0 conn True
+ops nodes 6 diff 0 conn True
+payment nodes 11 diff 0 conn True
+refund nodes 38 diff 0 conn True
+search nodes 13 diff 0 conn True
+support nodes 45 diff 0 conn True
+tech nodes 17 diff 0 conn True
+deployed_mismatch 0
+[14:25:48] reindex
+문서 8/8 (일반 7, 스태프 1)
+청크 42개, 길이 최소 116 · 중앙값 229 · 최대 432 (문자 수)
+색인 응답 outcome: store_output_received
+색인 단계: 응답상 완료 — 청크 수는 저장 전 수량, 실제 저장 수·직원 저장소는 미검증
+공개 검색: 실패 또는 미검증 — 검색 오류: index_unavailable
+직원 문서 비노출: PASS (승인된 공개 문서의 본문·절 확인, 반환 결과 범위)
+직원 저장소 실제 저장: 미검증 — 공개 Search에서 차단 유지, 별도 제한된 검증 필요
+저장 레코드 전수·실패 시 자동 롤백: 미검증/미구현
+search {'indexed': True, 'error': None} 3
+[14:25:56] common
+common_exit=1
+Passed 48/51
+report: runs/tm-reg-common-20261106-142753.json
+after-common {"tickets": 33, "alerts": 79, "dlq": 25, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:27:53] team
+team_exit=0
+Passed 13/13
+report: runs/tm-reg-team-20261106-142846.json
+after-team {"tickets": 38, "alerts": 79, "dlq": 25, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:29:51] security
+security_exit=0
+Passed 7/7
+report: runs/tm-reg-security-permissions-20261106-143001.json
+after-security {"tickets": 41, "alerts": 80, "dlq": 25, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:31:06] bench
+bench_exit=0
+✔ #1 · HTTP 200 · 6.09s · route=자동 답변
+✔ #2 · HTTP 200 · 6.75s · route=자동 답변
+✔ #3 · HTTP 200 · 6.09s · route=자동 답변
+✔ #4 · HTTP 200 · 5.68s · route=자동 답변
+✔ #5 · HTTP 200 · 6.18s · route=자동 답변
+p50 6.09s · p95 6.75s · max 6.75s · failures 0/5
+report: runs/bench-ticketmoa-support-20261106-143137.json
+final {"tickets": 41, "alerts": 80, "dlq": 25, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:31:37] DONE

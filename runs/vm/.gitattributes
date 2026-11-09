@@ -1,0 +1,2 @@
+rag-search-eval-*.json -text
+rag-search-eval-*.csv -text

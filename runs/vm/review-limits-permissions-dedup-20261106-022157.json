@@ -1,0 +1,785 @@
+{
+  "at": "2026-11-06T02:21:57.783002+00:00",
+  "settings": {
+    "tech": [
+      {
+        "node": "작성 모델",
+        "timeout": 3200
+      },
+      {
+        "node": "검증 호출",
+        "timeout": "={{ Math.max(500, Math.min(5000, $json.deadline_ms - Date.now())) }}"
+      }
+    ],
+    "agents": [
+      {
+        "node": "분류 모델",
+        "timeout": 3000
+      },
+      {
+        "node": "검증 모델",
+        "timeout": 2000
+      }
+    ],
+    "support": [
+      {
+        "node": "Get users",
+        "timeout": 5000
+      },
+      {
+        "node": "Call agents",
+        "timeout": 5000
+      },
+      {
+        "node": "Call search",
+        "timeout": 5000
+      },
+      {
+        "node": "Call search ∥",
+        "timeout": 5000
+      },
+      {
+        "node": "Call payment ∥",
+        "timeout": 2500
+      },
+      {
+        "node": "Call tech",
+        "timeout": 5000
+      },
+      {
+        "node": "Call refund",
+        "timeout": 5000
+      },
+      {
+        "node": "Call payment",
+        "timeout": 2500
+      },
+      {
+        "node": "Call handoff",
+        "timeout": "={{ Math.max(500, 5500 - (Date.now() - $('Load registry').first().json.t0)) }}"
+      },
+      {
+        "node": "POST /logs",
+        "timeout": 3000
+      },
+      {
+        "node": "Call search (evidence)",
+        "timeout": 2000
+      },
+      {
+        "node": "Get rate",
+        "timeout": 1000
+      },
+      {
+        "node": "Save rate",
+        "timeout": 1000
+      }
+    ],
+    "payment": [
+      {
+        "node": "본인 건 조회",
+        "timeout": "={{ Math.max(300, Math.min(2000, $json.deadline_ms - Date.now() - 200)) }}"
+      }
+    ]
+  },
+  "hashes": {
+    "workflows/ticketmoa-tech.json": "8a960e88d088468845c3916cbfe551380093afff41d7626d3b88a28c6c1a10c5",
+    "workflows/ticketmoa-agents.json": "452ae378c32e890537d17ef77f7ad48f8236024816c34d61d8aa485a41f0af3f",
+    "workflows/ticketmoa-support.json": "8f92d86ae2decb9969b174c69cb451c3188e89f4d88b4900ea52ed12a2e070bf",
+    "workflows/ticketmoa-payment.json": "8037a6556e8e86c6a40893311359b5868a74c380f6fe640364e82ed8b3f32bb5"
+  },
+  "results": [
+    {
+      "case": "WF-01",
+      "run": 1,
+      "request": {
+        "request_id": "review81-1793931717816120326",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "seconds": 8.063734141062014,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931717816120326",
+        "route": "자동 답변",
+        "answer": "모바일티켓 QR이 회색으로 보일 때는 앱을 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침해 보세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하는 것도 중요합니다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시될 수 있습니다. 위 방법으로 해결되지 않고 공연 시작 30분 이내라면 현장 발권 창구를 이용하시기 바랍니다.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 7820,
+          "agents_ms": 2345,
+          "search_ms": 1380,
+          "tech_ms": 3952
+        },
+        "reason": ""
+      },
+      "common_passed": false
+    },
+    {
+      "case": "WF-05",
+      "run": 1,
+      "request": {
+        "request_id": "review81-1793931725880158180",
+        "user": "박서준",
+        "channel": "web",
+        "question": "게이트 장애 때 스태프가 수기로 입장 처리하는 절차랑 책임자 코드 입력 방법 알려 주세요"
+      },
+      "seconds": 5.2792336019920185,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931725880158180",
+        "route": "담당자 이관",
+        "answer": "지금은 안내를 준비하지 못해 담당자에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2020).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2020",
+          "key": "review81-1793931725880158180",
+          "category": "general_info",
+          "priority": "normal",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 2,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5133,
+          "agents_ms": 1759,
+          "search_ms": 759,
+          "tech_ms": 2159,
+          "handoff_ms": 343
+        },
+        "reason": "writer_not_in_context"
+      },
+      "common_passed": true,
+      "strict_route_passed": true
+    },
+    {
+      "case": "WF-11",
+      "run": 1,
+      "request": {
+        "request_id": "review81-1793931731159656884",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "seconds": 5.6714482279494405,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931731159656884",
+        "route": "담당자 이관",
+        "answer": "문의 C-2002 정보를 지금 확인하지 못했습니다.\n\n상담원 연결 요청을 받아 두었습니다. 접수 번호는 확인되는 대로 안내드립니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1,
+          "error": "timeout_or_network",
+          "handoff": {
+            "dlq": true,
+            "alert": true
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5516,
+          "agents_ms": 151,
+          "payment_ms": 2155,
+          "handoff_ms": 3083
+        },
+        "reason": "payment_failed"
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-01",
+      "run": 2,
+      "request": {
+        "request_id": "review81-1793931736834292044",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "seconds": 5.846229581045918,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931736834292044",
+        "route": "자동 답변",
+        "answer": "모바일티켓 QR이 회색으로 보일 때는 앱을 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침해 보세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하는 것도 중요합니다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시될 수 있습니다. 위 ���법으로 해결되지 않고 공연 시작 30분 이내라면 현장 발권 창구를 이용하시기 바랍니다.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5688,
+          "agents_ms": 1939,
+          "search_ms": 434,
+          "tech_ms": 3238
+        },
+        "reason": ""
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-05",
+      "run": 2,
+      "request": {
+        "request_id": "review81-1793931742680778637",
+        "user": "박서준",
+        "channel": "web",
+        "question": "게이트 장애 때 스태프가 수기로 입장 처리하는 절차랑 책임자 코드 입력 방법 알려 주세요"
+      },
+      "seconds": 4.746391489985399,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931742680778637",
+        "route": "담당자 이관",
+        "answer": "지금은 안내를 준비하지 못해 담당자에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2022).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2022",
+          "key": "review81-1793931742680778637",
+          "category": "general_info",
+          "priority": "normal",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 2,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 4574,
+          "agents_ms": 1517,
+          "search_ms": 382,
+          "tech_ms": 2385,
+          "handoff_ms": 188
+        },
+        "reason": "writer_not_in_context"
+      },
+      "common_passed": true,
+      "strict_route_passed": true
+    },
+    {
+      "case": "WF-11",
+      "run": 2,
+      "request": {
+        "request_id": "review81-1793931747427470910",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "seconds": 5.728517557028681,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931747427470910",
+        "route": "담당자 이관",
+        "answer": "문의 C-2002 정보를 지금 확인하지 못했습니다.\n\n상담원 연결 요청을 받아 두었습니다. 접수 번호는 확인되는 대로 안내드립니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1,
+          "error": "timeout_or_network",
+          "handoff": {
+            "dlq": true,
+            "alert": true
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5534,
+          "agents_ms": 144,
+          "payment_ms": 2154,
+          "handoff_ms": 3117
+        },
+        "reason": "payment_failed"
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-01",
+      "run": 3,
+      "request": {
+        "request_id": "review81-1793931753159476222",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "seconds": 6.913693601964042,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931753159476222",
+        "route": "자동 답변",
+        "answer": "모바일티켓 QR이 회색으로 보일 때는 앱을 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침해 보세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하는 것도 중요합니다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시될 수 있습니다. 만약 공연 시작 30분 이내라면 현장 발권 창구로 가시기 바랍니다.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 6756,
+          "agents_ms": 2156,
+          "search_ms": 426,
+          "tech_ms": 4085
+        },
+        "reason": ""
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-05",
+      "run": 3,
+      "request": {
+        "request_id": "review81-1793931760073573718",
+        "user": "박서준",
+        "channel": "web",
+        "question": "게이트 장애 때 스태프가 수기로 입장 처리하는 절차랑 책임자 코드 입력 방법 알려 주세요"
+      },
+      "seconds": 6.756807722034864,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931760073573718",
+        "route": "담당자 이관",
+        "answer": "지금은 안내를 준비하지 못해 담당자에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2024).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2024",
+          "key": "review81-1793931760073573718",
+          "category": "general_info",
+          "priority": "normal",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "general_info"
+          ],
+          "confidence": 0.9,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 6594,
+          "agents_ms": 1641,
+          "search_ms": 456,
+          "tech_ms": 4176,
+          "handoff_ms": 223
+        },
+        "reason": "verification_failed"
+      },
+      "common_passed": true,
+      "strict_route_passed": true
+    },
+    {
+      "case": "WF-11",
+      "run": 3,
+      "request": {
+        "request_id": "review81-1793931766833073916",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "seconds": 5.79097513994202,
+      "status": 200,
+      "response": {
+        "request_id": "review81-1793931766833073916",
+        "route": "담당자 이관",
+        "answer": "문의 C-2002 정보를 지금 확인하지 못했습니다.\n\n상담원 연결 요청을 받아 두었습니다. 접수 번호는 확인되는 대로 안내드립니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 0,
+          "intents": [
+            "booking_lookup"
+          ],
+          "confidence": 1,
+          "error": "timeout_or_network",
+          "handoff": {
+            "dlq": true,
+            "alert": true
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5575,
+          "agents_ms": 176,
+          "payment_ms": 2174,
+          "handoff_ms": 3065
+        },
+        "reason": "payment_failed"
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-09",
+      "run": 1,
+      "request": {
+        "request_id": "review81-dup-1793931772632694995",
+        "user": "정민아",
+        "channel": "web",
+        "question": "같은 공연을 두 번 결제한 것 같아요. 154,000원이 두 번 빠져나갔어요"
+      },
+      "seconds": 2.361930754967034,
+      "status": 200,
+      "response": {
+        "request_id": "review81-dup-1793931772632694995",
+        "route": "담당자 이관",
+        "answer": "결제 오류는 결제 내역 확인이 필요해 상담원에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2025).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2025",
+          "key": "review81-dup-1793931772632694995",
+          "category": "payment_error",
+          "priority": "normal",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "payment_error"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2205,
+          "agents_ms": 1656,
+          "payment_ms": 176,
+          "handoff_ms": 241
+        },
+        "reason": "payment_error_handoff"
+      },
+      "common_passed": true
+    },
+    {
+      "case": "WF-09",
+      "run": 2,
+      "request": {
+        "request_id": "review81-dup-1793931772632694995",
+        "user": "정민아",
+        "channel": "web",
+        "question": "같은 공연을 두 번 결제한 것 같아요. 154,000원이 두 번 빠져나갔어요"
+      },
+      "seconds": 2.352456960012205,
+      "status": 200,
+      "response": {
+        "request_id": "review81-dup-1793931772632694995",
+        "route": "담당자 이관",
+        "answer": "결제 오류는 결제 내역 확인이 필요해 상담원에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2025).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2025",
+          "key": "review81-dup-1793931772632694995",
+          "category": "payment_error",
+          "priority": "normal",
+          "duplicate": true
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-payment",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "payment_error"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2161,
+          "agents_ms": 1423,
+          "payment_ms": 171,
+          "handoff_ms": 447
+        },
+        "reason": "payment_error_handoff"
+      },
+      "common_passed": true
+    }
+  ],
+  "fault_before": {
+    "faq": "ok",
+    "tickets": "ok",
+    "prompts": "ok",
+    "usage": "ok",
+    "dlq": "ok",
+    "slow_seconds": 8.0
+  },
+  "duplicate": {
+    "first": {
+      "id": "T-2025",
+      "key": "review81-dup-1793931772632694995",
+      "category": "payment_error",
+      "priority": "normal",
+      "duplicate": false
+    },
+    "second": {
+      "id": "T-2025",
+      "key": "review81-dup-1793931772632694995",
+      "category": "payment_error",
+      "priority": "normal",
+      "duplicate": true
+    },
+    "stored_count": 1,
+    "stored_ids": [
+      "T-2025"
+    ],
+    "before_count": 0,
+    "passed": true
+  },
+  "fault_after": {
+    "faq": "ok",
+    "tickets": "ok",
+    "prompts": "ok",
+    "usage": "ok",
+    "dlq": "ok",
+    "slow_seconds": 8.0
+  },
+  "finished_at": "2026-11-06T02:22:57.361655+00:00",
+  "wf05_search_evidence": [
+    {
+      "request_id": "review81-1793931725880158180",
+      "support_execution": 3025,
+      "search_execution": 3027,
+      "access_level": "all",
+      "search_staff": false,
+      "memory_key": "ticketmoa_kb_v1_all",
+      "staff_node_executed": false
+    },
+    {
+      "request_id": "review81-1793931742680778637",
+      "support_execution": 3039,
+      "search_execution": 3041,
+      "access_level": "all",
+      "search_staff": false,
+      "memory_key": "ticketmoa_kb_v1_all",
+      "staff_node_executed": false
+    },
+    {
+      "request_id": "review81-1793931760073573718",
+      "support_execution": 3053,
+      "search_execution": 3055,
+      "access_level": "all",
+      "search_staff": false,
+      "memory_key": "ticketmoa_kb_v1_all",
+      "staff_node_executed": false
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>티켓모아 관리자</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin">
+  <header class="a-head">
+    <div class="a-title">
+      <div class="avatar bot">TM</div>
+      <div>
+        <strong>티켓모아 상담 관리자</strong>
+        <span id="a-target">연결 확인 중</span>
+      </div>
+    </div>
+    <div class="a-tools">
+      <span id="a-updated" class="muted">-</span>
+      <button id="a-clear" type="button" class="ghost">대화 기록 비우기</button>
+    </div>
+  </header>
+
+  <section id="metrics" class="metrics" aria-label="지표"></section>
+
+  <section class="faults" aria-label="장애 패널">
+    <div class="faults-head">
+      <strong>장애 패널</strong>
+      <span class="muted">최근 30분 · 고객에게는 모두 "담당자 이관"으로 보이는 건을 원인별로 나눔</span>
+    </div>
+    <div id="fault-stages" class="fault-stages"></div>
+    <div id="fault-slow" class="fault-slow"></div>
+  </section>
+
+  <main class="a-main">
+    <section class="list-pane" aria-label="대화 목록">
+      <nav id="filters" class="filters"></nav>
+      <ol id="chat-list" class="chat-list"></ol>
+    </section>
+    <section id="detail" class="detail" aria-label="대화 상세">
+      <p class="empty">왼쪽에서 대화를 고르세요. 새 대화는 자동으로 들어옵니다.</p>
+    </section>
+  </main>
+
+  <section class="ops" aria-label="운영 데이터">
+    <nav id="ops-tabs" class="ops-tabs"></nav>
+    <div id="ops-body" class="ops-body"></div>
+  </section>
+
+  <script src="flow.js"></script>
+  <script src="reasons.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

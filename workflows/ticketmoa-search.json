@@ -32,7 +32,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const b = $input.first()?.json?.body ?? {};\nconst access_level = b.access_level === 'staff' ? 'staff' : 'all';\nconst scope = Array.isArray(b.scope) ? [...new Set(b.scope.map(String).map(x => x.trim()).filter(Boolean))] : [];\nreturn [{ json: {\n  query: String(b.query ?? '').trim().slice(0, 700),\n  access_level,\n  search_staff: access_level === 'staff',\n  top_k: Math.min(Math.max(Number(b.top_k) || 3, 1), 8),\n  scope,\n} }];"
+        "jsCode": "const b = $input.first()?.json?.body ?? {};\nconst staffSearchDisabled = b.access_level === 'staff';\nconst scope = Array.isArray(b.scope) ? [...new Set(b.scope.map(String).map(x => x.trim()).filter(Boolean))] : [];\nreturn [{ json: {\n  // Temporary fail-closed policy: no request can select the staff store until\n  // support passes an authenticated identity through an approved trust boundary.\n  query: staffSearchDisabled ? '' : String(b.query ?? '').trim().slice(0, 700),\n  access_level: 'all',\n  search_staff: false,\n  staff_search_disabled: staffSearchDisabled,\n  top_k: Math.min(Math.max(Number(b.top_k) || 3, 1), 8),\n  scope,\n} }];"
       }
     },
     {
@@ -230,7 +230,7 @@
         75
       ],
       "parameters": {
-        "jsCode": "return [{ json: { hits: [], top_score: 0, indexed: null, error: 'empty_query' } }];"
+        "jsCode": "const p = $('검색 준비').first().json;\nif (p.staff_search_disabled) return [{ json: { hits: [], top_score: 0, indexed: false, staff_indexed: false, error: 'staff_search_disabled' } }];\nreturn [{ json: { hits: [], top_score: 0, indexed: null, error: 'empty_query' } }];"
       }
     },
     {

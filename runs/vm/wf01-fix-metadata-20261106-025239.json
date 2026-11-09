@@ -1,0 +1,28 @@
+{
+  "hashes": {
+    "workflows/ticketmoa-agents.json": "bccce0c40e22f9b50127c103d3c7fbd29591f4d5137224707a1cef31bd48e0a4",
+    "workflows/ticketmoa-tech.json": "035c2e916e0ed0de2d732b228c1b7d890232e9bbbd313818388fb2aad2e3568a",
+    "workflows/ticketmoa-support.json": "a2c90457fd692a7da383beee60690420b23d56b4355715034dae582fd80fd3a1",
+    "lib/common.js": "e9d2e777f48474ff6cd9b17c3449536cd1fe12666896547c7902f2a465a0cf49"
+  },
+  "conditions": {
+    "repeat": 3,
+    "case_count": 17,
+    "global_tickets_reset_skipped": true,
+    "request_ids": "fresh prefix, original IDs mapped consistently including WF09 pair",
+    "explicit_support_warmup_before_first": false,
+    "first_support_after_reindex": true,
+    "post_suite_idle_seconds": 60
+  },
+  "all_case_expectations_unchanged": true,
+  "reports": [
+    "wf01-fix-iteration1-common-20261106-024710.json",
+    "wf01-fix-common-20261106-025239.json",
+    "wf01-fix-iteration1-idle60-20261106.json",
+    "wf01-fix-idle60-20261106-025239.json"
+  ],
+  "unit_tests": {
+    "passed": 39,
+    "total": 39
+  }
+}

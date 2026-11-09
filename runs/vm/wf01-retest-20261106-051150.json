@@ -1,0 +1,348 @@
+{
+  "cases": "tm-wf01.json",
+  "webhook": "ticketmoa-support",
+  "passed": 5,
+  "total": 5,
+  "results": [
+    {
+      "case": "WF-01 정상 문의",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 7.2,
+      "status": 200,
+      "request": {
+        "request_id": "rt051118-wf01",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "response": {
+        "request_id": "rt051118-wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 7100,
+          "agents_ms": 2138,
+          "search_ms": 1475,
+          "tech_ms": 3401
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "WF-01 정상 문의",
+      "webhook": "ticketmoa-support",
+      "run": 2,
+      "passed": true,
+      "problems": [],
+      "seconds": 7.3,
+      "status": 200,
+      "request": {
+        "request_id": "rt051118-wf01",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "response": {
+        "request_id": "rt051118-wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 번갈아가며 마이티켓을 새로고침하세요. 로그아웃 후 재로그인하고, 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구를 이용하세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 7198,
+          "agents_ms": 2258,
+          "search_ms": 905,
+          "tech_ms": 3955
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "WF-01 정상 문의",
+      "webhook": "ticketmoa-support",
+      "run": 3,
+      "passed": true,
+      "problems": [],
+      "seconds": 5.7,
+      "status": 200,
+      "request": {
+        "request_id": "rt051118-wf01",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "response": {
+        "request_id": "rt051118-wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하세요. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5527,
+          "agents_ms": 1578,
+          "search_ms": 367,
+          "tech_ms": 3509
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "WF-01 정상 문의",
+      "webhook": "ticketmoa-support",
+      "run": 4,
+      "passed": true,
+      "problems": [],
+      "seconds": 5.7,
+      "status": 200,
+      "request": {
+        "request_id": "rt051118-wf01",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "response": {
+        "request_id": "rt051118-wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5600,
+          "agents_ms": 1582,
+          "search_ms": 347,
+          "tech_ms": 3596
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "WF-01 정상 문의",
+      "webhook": "ticketmoa-support",
+      "run": 5,
+      "passed": true,
+      "problems": [],
+      "seconds": 5.7,
+      "status": 200,
+      "request": {
+        "request_id": "rt051118-wf01",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+      },
+      "response": {
+        "request_id": "rt051118-wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하세요. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5557,
+          "agents_ms": 1526,
+          "search_ms": 318,
+          "tech_ms": 3634
+        },
+        "reason": ""
+      }
+    }
+  ]
+}

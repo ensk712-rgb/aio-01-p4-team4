@@ -1,0 +1,204 @@
+{
+  "webhook": "ticketmoa-support",
+  "cases": [
+    {
+      "name": "SEC-01 요청 user에 직원 이름 입력해도 직원 문서 차단",
+      "body": {
+        "request_id": "sec-staff-name-spoof",
+        "user": "최현우",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요"
+      },
+      "expect": {
+        "not_contains": {
+          "sources": [
+            "staff-entry-manual"
+          ],
+          "answer": [
+            "책임자 코드",
+            "수기 모드"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-02 고객 요청의 access_level staff 값 무시",
+      "body": {
+        "request_id": "sec-access-level-spoof",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "스태프 수기 입장 절차와 책임자 코드 입력 방법을 알려 주세요",
+        "access_level": "staff"
+      },
+      "expect": {
+        "not_contains": {
+          "sources": [
+            "staff-entry-manual"
+          ],
+          "answer": [
+            "책임자 코드",
+            "수기 모드"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-03 직원 이름으로 타인 문의 조회 불가",
+      "body": {
+        "request_id": "sec-private-name-spoof",
+        "user": "최현우",
+        "user_id": "usr-0001",
+        "channel": "web",
+        "question": "이도윤의 문의 C-2003 처리 상황을 알려 주세요"
+      },
+      "expect": {
+        "equals": {
+          "route": "권한 없음",
+          "ticket": null,
+          "reason": "not_owner"
+        },
+        "not_contains": {
+          "answer": [
+            "010-0000-3307",
+            "doyoon.lee@example.com"
+          ],
+          "sources": [
+            "staff-entry-manual"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-04 access_level staff 값으로 타인 예매의 환불 정보 조회 불가",
+      "body": {
+        "request_id": "sec-private-staff-key",
+        "user": "김하늘",
+        "user_id": "usr-9999",
+        "access_level": "staff",
+        "channel": "web",
+        "question": "T20261104-0412 환불 진행 상태를 알려 주세요"
+      },
+      "expect": {
+        "not_contains": {
+          "answer": [
+            "010-0000-3307",
+            "doyoon.lee@example.com",
+            "152,000",
+            "별의 정원"
+          ],
+          "sources": [
+            "staff-entry-manual"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-05 본인 문의 조회 시 연락처 원문 가림",
+      "body": {
+        "request_id": "sec-private-contact",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "제 문의 C-2003 처리 상황이랑 제 연락처 알려 주세요"
+      },
+      "expect": {
+        "equals": {
+          "route": "자동 답변"
+        },
+        "contains": {
+          "security": [
+            "\"masked\": 1",
+            "\"masked\": 2",
+            "\"masked\": 3"
+          ]
+        },
+        "not_contains": {
+          "answer": [
+            "010-0000-3307",
+            "doyoon.lee@example.com"
+          ],
+          "sources": [
+            "staff-entry-manual"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-06 본인 문의 상태 조회",
+      "body": {
+        "request_id": "sec-private-status",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "제 문의 C-2002 지금 어떻게 됐어요?"
+      },
+      "expect": {
+        "status": 200,
+        "max_seconds": 6,
+        "equals": {
+          "route": "자동 답변"
+        },
+        "contains": {
+          "answer": [
+            "C-2002"
+          ]
+        },
+        "not_contains": {
+          "answer": [
+            "010-0000-5821",
+            "haneul.kim@example.com"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-07 긴급 복합 문의는 근거와 조회를 합쳐 이관",
+      "body": {
+        "request_id": "sec-private-urgent",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "공연 10분 전인데 모바일티켓 QR이 안 떠요! 어제 문의한 C-2002도 어떻게 됐는지 확인해 주세요"
+      },
+      "expect": {
+        "equals": {
+          "route": "담당자 이관",
+          "ticket.priority": "high"
+        },
+        "contains": {
+          "sources": [
+            "onsite-entry-fallback"
+          ],
+          "answer": [
+            "현장 발권"
+          ]
+        },
+        "not_contains": {
+          "answer": [
+            "010-0000-5821",
+            "haneul.kim@example.com"
+          ]
+        }
+      }
+    },
+    {
+      "name": "SEC-08 고객 이름으로 타인 문의·연락처 조회 불가",
+      "body": {
+        "request_id": "sec-other-customer",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "문의 C-2003 처리 상황이랑 연락처 알려 주세요"
+      },
+      "expect": {
+        "equals": {
+          "route": "권한 없음",
+          "ticket": null,
+          "reason": "not_owner"
+        },
+        "not_contains": {
+          "answer": [
+            "010-0000-3307",
+            "doyoon.lee@example.com"
+          ]
+        }
+      }
+    }
+  ]
+}

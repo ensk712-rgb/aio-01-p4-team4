@@ -1,0 +1,47 @@
+[07:10:15] deployed-compare
+agents active True nodes 17 diff [] conn True errWF ticketmoaErrors01
+errors active True nodes 4 diff [] conn True errWF None
+handoff active True nodes 33 diff [] conn True errWF ticketmoaErrors01
+index active True nodes 12 diff [] conn True errWF None
+ops active True nodes 6 diff [] conn True errWF ticketmoaErrors01
+payment active True nodes 11 diff [] conn True errWF ticketmoaErrors01
+refund active True nodes 38 diff [] conn True errWF ticketmoaErrors01
+search active True nodes 13 diff [] conn True errWF None
+support active True nodes 45 diff [] conn True errWF ticketmoaErrors01
+tech active True nodes 17 diff [] conn True errWF None
+deployed_mismatch 0
+before {"tickets": 90, "alerts": 63, "dlq": 21, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[07:10:19] restart-n8n
+[07:10:27] healthz-ok-after-8s
+[07:10:32] index-after-restart
+{"hits":[],"top_score":0,"indexed":false,"error":"index_unavailable","staff_indexed":false}
+
+after_restart {'indexed': False, 'staff_indexed': False, 'error': 'index_unavailable'} 0
+[07:10:36] reindex
+문서 8/8 (일반 7, 스태프 1)
+청크 42개, 길이 최소 116 · 중앙값 229 · 최대 432 (문자 수)
+색인 결과: store_output_received
+검색 확인: 일반 색인 True, 스태프 색인 True, 결과 3건
+색인 완료
+reindex_seconds 2.0
+[07:10:38] copy-cases
+[07:10:38] common
+common_exit=1
+✔ WF-13 잘못된 입력 · 501자 #3 · 0.2s
+Passed 50/51
+report: runs/tm-reg-common-20261106-071237.json
+after-common {"tickets": 97, "alerts": 66, "dlq": 23, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[07:12:37] team
+team_exit=1
+✔ TM-12 국내 IP는 정상 처리 (과잉 차단 없음) · 5.5s
+Passed 11/13
+report: runs/tm-reg-team-20261106-071331.json
+after-team {"tickets": 102, "alerts": 66, "dlq": 23, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[07:14:36] bench
+bench_exit=0
+✔ #4 · HTTP 200 · 5.39s · route=자동 답변
+✔ #5 · HTTP 200 · 5.38s · route=자동 답변
+p50 5.39s · p95 5.95s · max 5.95s · failures 0/5
+report: runs/bench-ticketmoa-support-20261106-071503.json
+final {"tickets": 102, "alerts": 66, "dlq": 23, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[07:15:03] DONE

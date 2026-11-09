@@ -1,0 +1,230 @@
+{
+  "id": "ticketmoaOps0001",
+  "name": "ticketmoa-ops",
+  "nodes": [
+    {
+      "id": "5ef728df-87c0-4251-9565-21da86d42a94",
+      "name": "운영 요청 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticketmoa-ops",
+        "responseMode": "responseNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "notes": "【역할】 관리자 화면(webapp)의 운영 데이터 요청을 받는다.\n【입력】 {op}. X-Team-Key 필수.\n【출력】 요청 본문.",
+      "notesInFlow": false,
+      "webhookId": "f491a289-f036-4a21-b45f-befd8ace85d9",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaTeamKey1",
+          "name": "ticketmoa-team-key"
+        }
+      }
+    },
+    {
+      "id": "111cfd47-b1db-4b7b-8c40-655b29746b8c",
+      "name": "요청 검사",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// 읽기 전용 화이트리스트. 데이터 API 경로를 요청에서 받지 않는다 (상태를 바꾸는 호출 없음).\nconst OPS = {\n  tickets: '/tickets-created',\n  alerts: '/alerts',\n  dlq: '/dlq',\n  logs: '/logs?limit=200',\n  fault: '/admin/fault',\n};\nconst body = $input.first().json.body;\nconst op = body && typeof body === 'object' && typeof body.op === 'string' ? body.op : '';\nreturn [{ json: { op, ok: Object.prototype.hasOwnProperty.call(OPS, op), path: OPS[op] || '' } }];"
+      },
+      "notes": "【역할】 op를 화이트리스트로 검사한다.\n【입력】 {op}.\n【처리】 tickets·alerts·dlq·logs·fault만 데이터 API 읽기 경로로 바꾼다.\n【출력】 {op, ok, path}.",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa67fbfa-f462-4f36-9f97-c1d7f37e9461",
+      "name": "op 정상?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        600,
+        0
+      ],
+      "notes": "【역할】 모르는 op는 데이터 API를 부르지 않고 오류로 돌려준다."
+    },
+    {
+      "id": "78f3dc24-fb37-40d3-93ae-f34186566fc2",
+      "name": "데이터 API 읽기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -100
+      ],
+      "parameters": {
+        "url": "=http://data-api:8800{{ $json.path }}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "notes": "【역할】 데이터 API를 GET으로 읽는다.\n【입력】 {path}.\n【처리】 GET http://data-api:8800<path> (X-Api-Key Credential), 5초.\n【출력】 {statusCode, body}.\n【실패 시】 오류 출력으로 결과 조립에 넘긴다 (HTTP 200 + error).",
+      "notesInFlow": false,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ticketmoaDataApi1",
+          "name": "ticketmoa-data-api"
+        }
+      }
+    },
+    {
+      "id": "b3584f4d-51a8-47b3-a39f-dc3997b33664",
+      "name": "결과 조립",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// ↓ lib/common.js 원문 복사\nfunction maskPII(text) {\n  let masked = 0;\n  let out = String(text == null ? '' : text);\n  out = out.replace(/\\b(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})\\b/g, (_, a, _b, c) => { masked++; return `${a}-****-${c}`; });\n  out = out.replace(/\\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})\\b/g, (_, first, domain) => { masked++; return `${first}***@${domain}`; });\n  return { text: out, masked };\n}\nfunction maskDeep(value) {\n  let masked = 0;\n  const walk = v => {\n    if (typeof v === 'string') { const r = maskPII(v); masked += r.masked; return r.text; }\n    if (Array.isArray(v)) return v.map(walk);\n    if (v && typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = walk(v[k]); return o; }\n    return v;\n  };\n  return { value: walk(value), masked };\n}\n// ↑ lib/common.js 원문 복사 끝\n\nconst req = $('요청 검사').first().json;\nconst at = new Date().toISOString();\nif (!req.ok) return [{ json: { op: req.op, error: 'unknown op', at } }];\nconst j = $input.first().json;\nif (typeof j.statusCode !== 'number' || j.statusCode >= 300) {\n  return [{ json: { op: req.op, error: 'data api ' + (j.statusCode || (j.error && (j.error.message || j.error)) || 'no response'), at } }];\n}\n// 연락처는 화면에 넘기기 전에 가린다.\nreturn [{ json: { op: req.op, data: maskDeep(j.body).value, at } }];"
+      },
+      "notes": "【역할】 응답 모양을 {op, data, at}으로 맞춘다.\n【입력】 데이터 API 응답 또는 오류.\n【처리】 lib/common.js maskDeep으로 연락처를 가린다.\n【출력】 {op, data, at} 또는 {op, error, at}.",
+      "notesInFlow": false
+    },
+    {
+      "id": "1d30277f-419c-4c2e-a25d-2c03fa952e31",
+      "name": "운영 결과 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1500,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "notes": "【역할】 HTTP 200 JSON으로 돌려준다 (실패도 200).",
+      "notesInFlow": false
+    }
+  ],
+  "connections": {
+    "운영 요청 수신": {
+      "main": [
+        [
+          {
+            "node": "요청 검사",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "요청 검사": {
+      "main": [
+        [
+          {
+            "node": "op 정상?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "op 정상?": {
+      "main": [
+        [
+          {
+            "node": "데이터 API 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "결과 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "데이터 API 읽기": {
+      "main": [
+        [
+          {
+            "node": "결과 조립",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "결과 조립",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "결과 조립": {
+      "main": [
+        [
+          {
+            "node": "운영 결과 응답",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "ticketmoaErrors01"
+  },
+  "active": false,
+  "meta": {
+    "owner": "D 연동·안정성 (심환석)",
+    "purpose": "관리자 화면(webapp/admin)이 VM 데이터 API(티켓·알림·DLQ·로그·장애 스위치)를 읽기 전용으로 보게 한다.",
+    "reference": "Last3Mon/79/reference/baseline-ops-facts.json",
+    "scenarios": "가산 (관리자 화면)"
+  }
+}

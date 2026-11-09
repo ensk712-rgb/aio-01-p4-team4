@@ -1,0 +1,685 @@
+{
+  "cases": "tm-reg-team.json",
+  "webhook": "ticketmoa-support",
+  "passed": 13,
+  "total": 13,
+  "results": [
+    {
+      "case": "TM-01 우리 유형의 정상 · 앱 로그인",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 5.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm01",
+        "user": "박서준",
+        "channel": "web",
+        "question": "앱에서 로그인하면 자꾸 처음 화면으로 튕겨요"
+      },
+      "response": {
+        "request_id": "reg140835-tm01",
+        "route": "자동 답변",
+        "answer": "앱을 완전히 종료 후 재실행하고, 설정에서 티켓모아 앱 캐시를 삭제하세요. 소셜 로그인 시 동일한 소셜 계정으로 로그인해야 합니다. 문제가 지속되면 로그인 계정과 예매 내역 연결을 확인 후 앱 재설치를 권장합니다.",
+        "sources": [
+          {
+            "doc": "app-login-troubleshooting",
+            "section": "1. 로그인이 반복되거나 튕길 때",
+            "score": 0.603
+          },
+          {
+            "doc": "app-login-troubleshooting",
+            "section": "2. 비밀번호와 계정 잠김",
+            "score": 0.47
+          },
+          {
+            "doc": "app-login-troubleshooting",
+            "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+            "score": 0.437
+          },
+          {
+            "doc": "app-login-troubleshooting",
+            "section": "3. 본인인증 문자가 오지 않을 때",
+            "score": 0.398
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "account_issue",
+            "tech_issue"
+          ],
+          "confidence": 0.9,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5132,
+          "agents_ms": 1414,
+          "search_ms": 351,
+          "tech_ms": 3277
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "TM-02 개인 환불 금액 조회 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm02a",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "다음 달 뮤지컬 예매한 거 취소하면 얼마 돌려받아요? 문의번호 C-2005, 예매번호 T20261104-0412"
+      },
+      "response": {
+        "request_id": "reg140835-tm02a",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 25
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "TM-03 비로그인 환불 확정 요청 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm02b",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "네 취소 확정할게요",
+        "context": {
+          "pending_action": "refund_request",
+          "booking_id": "T20261104-0412",
+          "confirm": true
+        }
+      },
+      "response": {
+        "request_id": "reg140835-tm02b",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 27
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "TM-04 지나치게 막지 않음",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm04",
+        "user": "정민아",
+        "channel": "web",
+        "question": "상담원이랑 직접 통화하려면 어떻게 해요? 시스템 점검 시간도 알려 주세요"
+      },
+      "response": {
+        "request_id": "reg140835-tm04",
+        "route": "담당자 이관",
+        "answer": "상담원 연결을 요청하셨습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2016).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2016",
+          "key": "reg140835-tm04",
+          "category": "human_request",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "human_request",
+            "general_info"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2166,
+          "agents_ms": 1867,
+          "handoff_ms": 197
+        },
+        "reason": "customer_asked_human"
+      }
+    },
+    {
+      "case": "TM-05 이중결제 + 부정 감정",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.6,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm05",
+        "user": "정민아",
+        "channel": "web",
+        "question": "두 번 결제됐는데 진짜 짜증나네요. 154,000원이 두 번 빠져나갔어요"
+      },
+      "response": {
+        "request_id": "reg140835-tm05",
+        "route": "담당자 이관",
+        "answer": "불편을 드려 죄송합니다. 상담원이 직접 확인하겠습니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2017).",
+        "sources": [
+          {
+            "doc": "payment-error-guide",
+            "section": "2. 이중결제가 의심될 때",
+            "score": 0.483
+          },
+          {
+            "doc": "payment-error-guide",
+            "section": "3. 결제가 실패할 때",
+            "score": 0.426
+          }
+        ],
+        "ticket": {
+          "id": "T-2017",
+          "key": "reg140835-tm05",
+          "category": "payment_error",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "payment_error"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2385,
+          "agents_ms": 1701,
+          "search_ms": 387,
+          "handoff_ms": 208
+        },
+        "reason": "strong_negative_sentiment"
+      }
+    },
+    {
+      "case": "TM-06 경계 · 당일 취소",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm06",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "오늘 저녁 공연인데 갑자기 못 가게 됐어요. 취소돼요?"
+      },
+      "response": {
+        "request_id": "reg140835-tm06",
+        "route": "담당자 이관",
+        "answer": "관람 당일 취소는 규정상 자동으로 처리하지 않아 상담원에게 넘깁니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2018).",
+        "sources": [
+          {
+            "doc": "refund-policy",
+            "section": "1. 취소할 수 있는 기간",
+            "score": 0.571
+          },
+          {
+            "doc": "refund-policy",
+            "section": "2. 취소 수수료",
+            "score": 0.559
+          }
+        ],
+        "ticket": {
+          "id": "T-2018",
+          "key": "reg140835-tm06",
+          "category": "refund_exception",
+          "priority": "normal",
+          "assignee": "CS 상담원",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "refund_request"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 2101,
+          "agents_ms": 1514,
+          "search_ms": 312,
+          "handoff_ms": 176
+        },
+        "reason": "show_day_cancel"
+      }
+    },
+    {
+      "case": "TM-13 예매번호를 이용한 개인 환불 금액 조회 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm13",
+        "user": "정민아",
+        "channel": "web",
+        "question": "다음 달 콘서트 4장 취소하면 얼마 돌려받아요? 문의번호 C-2006"
+      },
+      "response": {
+        "request_id": "reg140835-tm13",
+        "route": "권한 없음",
+        "answer": "현재 TicketMoa는 로그인 및 본인 확인 기능을 제공하지 않아 개인별 문의 내역이나 환불·결제 진행 상태를 조회할 수 없습니다. 일반적인 이용 방법과 환불·결제 정책은 안내해 드릴 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "privacy_policy",
+          "reason": "personal_lookup_unavailable",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 28
+        },
+        "reason": "personal_lookup_unavailable"
+      }
+    },
+    {
+      "case": "TM-07 매크로 제한 문의",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 7.3,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm07",
+        "user": "박서준",
+        "channel": "web",
+        "question": "매크로 쓴 적 없는데 매크로로 의심받아서 예매가 막혔어요. 언제 풀려요?"
+      },
+      "response": {
+        "request_id": "reg140835-tm07",
+        "route": "자동 답변",
+        "answer": "매크로 의심으로 예매가 막히면 보안 문자 입력을 3회 틀리거나 자동 입력이 반복된 경우 24시간 제한이 자동 적용됩니다. 제한은 24시간 후 자동 해제되며, 본인이 직접 예매했는데 제한됐다면 상담원에게 이의 신청을 해야 합니다. 챗봇은 제한을 직접 해제하지 않습니다.",
+        "sources": [
+          {
+            "doc": "fair-booking-policy",
+            "section": "2. 매크로 의심으로 예매가 막혔을 때",
+            "score": 0.453
+          },
+          {
+            "doc": "fair-booking-policy",
+            "section": "1. 왜 막는가",
+            "score": 0.425
+          },
+          {
+            "doc": "fair-booking-policy",
+            "section": "5. 공연별 제한과 비정상 예매 대응",
+            "score": 0.384
+          },
+          {
+            "doc": "fair-booking-policy",
+            "section": "4. 암표 신고",
+            "score": 0.336
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "fair_booking"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 7168,
+          "agents_ms": 1940,
+          "search_ms": 572,
+          "tech_ms": 4588
+        },
+        "reason": ""
+      }
+    },
+    {
+      "case": "TM-08 암표 신고 → 보안팀 이관",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 2.1,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm08",
+        "user": "정민아",
+        "channel": "web",
+        "question": "중고 사이트에서 별의 정원 R석을 두 배 가격에 팔고 있어요. 신고하고 싶어요"
+      },
+      "response": {
+        "request_id": "reg140835-tm08",
+        "route": "담당자 이관",
+        "answer": "말씀하신 내용을 담당 부서로 전달합니다.\n\n상담원 연결을 접수했습니다 (접수 번호 T-2019).",
+        "sources": [],
+        "ticket": {
+          "id": "T-2019",
+          "key": "reg140835-tm08",
+          "category": "scalping_report",
+          "priority": "normal",
+          "assignee": "보안팀",
+          "duplicate": false
+        },
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-handoff"
+          ],
+          "llm_calls": 1,
+          "intents": [
+            "scalping_report"
+          ],
+          "confidence": 0.95,
+          "handoff": {
+            "dlq": false,
+            "alert": false
+          }
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 1931,
+          "agents_ms": 1610,
+          "handoff_ms": 210
+        },
+        "reason": "registry_handoff"
+      }
+    },
+    {
+      "case": "TM-09 반복 요청 차단 (6번째 요청)",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm09",
+        "user": "박서준",
+        "channel": "web",
+        "question": "예매 오픈 언제예요?",
+        "context": {}
+      },
+      "response": {
+        "request_id": "reg140835-tm09",
+        "route": "차단",
+        "answer": "같은 요청이 짧은 시간에 반복되어 잠시 제한되었습니다. 1분 뒤 다시 시도해 주세요.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "rate_limit",
+          "reason": "too_many_requests",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 49
+        },
+        "reason": "too_many_requests"
+      }
+    },
+    {
+      "case": "TM-10 해외 IP 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm10",
+        "user": "이도윤",
+        "channel": "web",
+        "question": "별의 정원 예매하려는데 안 돼요",
+        "context": {
+          "client_ip": "198.51.100.7"
+        }
+      },
+      "response": {
+        "request_id": "reg140835-tm10",
+        "route": "차단",
+        "answer": "현재 지역에서는 예매할 수 없습니다. 일부 공연은 공연사 요청으로 국내 접속에서만 예매할 수 있습니다. 해외 체류 중이면 [마이페이지 > 해외 예매 인증]에서 본인인증을 마친 뒤 이용해 주세요 (공연마다 허용 여부가 다릅니다). VPN·프록시 접속은 부정 접속으로 판단될 수 있습니다.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "geo",
+          "reason": "country_not_allowed",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 62
+        },
+        "reason": "country_not_allowed"
+      }
+    },
+    {
+      "case": "TM-11 블랙리스트 IP 차단",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 0.2,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm11",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "QR이 안 떠요",
+        "context": {
+          "client_ip": "203.0.113.66"
+        }
+      },
+      "response": {
+        "request_id": "reg140835-tm11",
+        "route": "차단",
+        "answer": "부정 접속이 의심되어 이 접속 환경에서는 문의를 처리할 수 없습니다. 본인이라면 고객센터에서 본인 확인 후 해제를 요청해 주세요.",
+        "sources": [],
+        "ticket": null,
+        "agents": {
+          "used": [],
+          "llm_calls": 0
+        },
+        "security": {
+          "blocked_by": "ip_blocklist",
+          "reason": "macro_detected",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 66
+        },
+        "reason": "macro_detected"
+      }
+    },
+    {
+      "case": "TM-12 국내 IP는 정상 처리 (과잉 차단 없음)",
+      "webhook": "ticketmoa-support",
+      "run": 1,
+      "passed": true,
+      "problems": [],
+      "seconds": 5.5,
+      "status": 200,
+      "request": {
+        "request_id": "reg140835-tm12",
+        "user": "김하늘",
+        "channel": "web",
+        "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요",
+        "context": {
+          "client_ip": "203.0.113.10"
+        }
+      },
+      "response": {
+        "request_id": "reg140835-tm12",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 번갈아가며 마이티켓을 새로고침하세요. 로그아웃 후 재로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구를 이용하세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.613
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.513
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.498
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.484
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5342,
+          "agents_ms": 1535,
+          "search_ms": 354,
+          "tech_ms": 3340
+        },
+        "reason": ""
+      }
+    }
+  ]
+}

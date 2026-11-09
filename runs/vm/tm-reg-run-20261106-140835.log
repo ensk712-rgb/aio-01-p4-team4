@@ -1,0 +1,95 @@
+[14:08:35] backup
+agents nodes 17 diff 0 conn True errWF ticketmoaErrors01
+errors nodes 9 diff 9 conn False errWF None
+handoff nodes 33 diff 0 conn True errWF ticketmoaErrors01
+index nodes 12 diff 0 conn True errWF None
+ops nodes 6 diff 0 conn True errWF ticketmoaErrors01
+payment nodes 11 diff 0 conn True errWF ticketmoaErrors01
+refund nodes 38 diff 0 conn True errWF ticketmoaErrors01
+search nodes 13 diff 4 conn True errWF None
+support nodes 45 diff 0 conn True errWF ticketmoaErrors01
+tech nodes 17 diff 0 conn True errWF None
+deployed_mismatch 2
+before {"tickets": 9, "alerts": 72, "dlq": 23, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:08:39] files-differ
+CHG workflows/ticketmoa-support.json
+CHG workflows/ticketmoa-search.json
+CHG workflows/ticketmoa-refund.json
+CHG workflows/ticketmoa-payment.json
+CHG workflows/ticketmoa-index.json
+CHG workflows/ticketmoa-handoff.json
+CHG workflows/ticketmoa-errors.json
+CHG tools/verify_rag_store.py
+CHG tools/test_verify_rag_store.py
+CHG tools/test_support_security.cjs
+CHG tools/test_reindex.py
+CHG tools/reindex.py
+CHG lib/test/error-workflow.test.js
+CHG lib/test/common.test.js
+CHG lib/common.js
+CHG data/users.json
+CHG cases/team.json
+CHG cases/security-permissions.json
+CHG cases/README.md
+[14:08:39] copy-files
+[14:08:39] no-node
+[14:08:39] push
+pushed search:    POST http://localhost:5678/webhook/ticketmoa-search
+pushed index:    POST http://localhost:5678/webhook/ticketmoa-index
+pushed tech:    POST http://localhost:5678/webhook/ticketmoa-tech
+pushed agents:    POST http://localhost:5678/webhook/ticketmoa-agents-verify
+pushed payment:    POST http://localhost:5678/webhook/ticketmoa-payment
+pushed refund:    POST http://localhost:5678/webhook/ticketmoa-refund
+pushed handoff:    POST http://localhost:5678/webhook/ticketmoa-handoff
+pushed errors: ✔ pushed 'ticketmoa-errors' (id ticketmoaErrors01)
+pushed ops:    POST http://localhost:5678/webhook/ticketmoa-ops
+pushed support:    POST http://localhost:5678/webhook/ticketmoa-support
+[14:12:58] restart-n8n
+[14:13:06] healthz-ok-after-8s
+[14:13:11] deployed-compare
+agents nodes 17 diff 0 conn True errWF ticketmoaErrors01
+errors nodes 9 diff 0 conn True errWF None
+handoff nodes 33 diff 0 conn True errWF ticketmoaErrors01
+index nodes 12 diff 0 conn True errWF None
+ops nodes 6 diff 0 conn True errWF ticketmoaErrors01
+payment nodes 11 diff 0 conn True errWF ticketmoaErrors01
+refund nodes 38 diff 0 conn True errWF ticketmoaErrors01
+search nodes 13 diff 0 conn True errWF None
+support nodes 45 diff 0 conn True errWF ticketmoaErrors01
+tech nodes 17 diff 0 conn True errWF None
+deployed_mismatch 0
+[14:13:15] reindex
+문서 8/8 (일반 7, 스태프 1)
+청크 42개, 길이 최소 116 · 중앙값 229 · 최대 432 (문자 수)
+색인 응답 outcome: store_output_received
+색인 단계: 응답상 완료 — 청크 수는 저장 전 수량, 실제 저장 수·직원 저장소는 미검증
+공개 검색: 실패 또는 미검증 — 검색 오류: index_unavailable
+직원 문서 비노출: PASS (승인된 공개 문서의 본문·절 확인, 반환 결과 범위)
+직원 저장소 실제 저장: 미검증 — 공개 Search에서 차단 유지, 별도 제한된 검증 필요
+저장 레코드 전수·실패 시 자동 롤백: 미검증/미구현
+reindex_seconds 2.9
+search {'indexed': True, 'staff_indexed': None, 'error': None} 3
+[14:13:18] copy-cases
+[14:13:18] common
+common_exit=1
+Passed 40/51
+report: runs/tm-reg-common-20261106-141519.json
+after-common {"tickets": 15, "alerts": 76, "dlq": 24, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:15:19] team
+team_exit=0
+Passed 13/13
+report: runs/tm-reg-team-20261106-141612.json
+after-team {"tickets": 23, "alerts": 76, "dlq": 24, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:17:18] security
+security_exit=0
+Passed 7/7
+report: runs/tm-reg-security-permissions-20261106-141727.json
+after-security {"tickets": 26, "alerts": 77, "dlq": 24, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:18:32] bench
+bench_exit=0
+✔ #4 · HTTP 200 · 5.82s · route=자동 답변
+✔ #5 · HTTP 200 · 5.67s · route=담당자 이관
+p50 5.83s · p95 6.41s · max 6.41s · failures 0/5
+report: runs/bench-ticketmoa-support-20261106-141902.json
+final {"tickets": 27, "alerts": 77, "dlq": 24, "fault": {"faq": "ok", "tickets": "ok", "prompts": "ok", "usage": "ok", "dlq": "ok", "slow_seconds": 8.0}}
+[14:19:02] DONE

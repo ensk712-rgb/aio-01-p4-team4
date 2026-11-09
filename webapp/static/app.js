@@ -5,6 +5,8 @@
   const $ = (id) => document.getElementById(id);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const params = new URLSearchParams(location.search);
+  // /demo 왼쪽 칸: 흐름 그래프 없이 채팅만 (예시 버튼은 채팅 위로 옮긴다)
+  const compact = params.get('compact') === '1';
 
   const ROUTE_CLASS = { '자동 답변': 'auto', '보완 질문': 'clarify', '담당자 이관': 'handoff', '권한 없음': 'forbid', '차단': 'block' };
   const BAR_PARTS = [['agents', '분류'], ['search', '검색'], ['payment', '조회'], ['refund', '환불'], ['tech', '작성·검증'], ['handoff', '이관']];
@@ -189,7 +191,7 @@
     clearInterval(timer);
     const path = buildPath(status, body);
     $('status').textContent = '실제 경로 재생';
-    await playPath(path);
+    if (!compact) await playPath(path);
     typing.remove();
     addMessage('bot', botText(status, body), status === 200 ? metaChips(body) : null);
     const ms = path.totalMs;
@@ -266,6 +268,10 @@
   }
 
   async function init() {
+    if (compact) {
+      document.body.classList.add('compact');
+      $('messages').before($('examples'));
+    }
     drawGraph();
     resetGraph();
     const res = await fetch('/api/config');

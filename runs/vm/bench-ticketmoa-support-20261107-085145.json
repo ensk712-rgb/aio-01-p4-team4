@@ -1,0 +1,306 @@
+{
+  "webhook": "ticketmoa-support",
+  "request": {
+    "request_id": "wf01",
+    "user": "김하늘",
+    "channel": "web",
+    "question": "모바일티켓 QR이 회색으로만 나오고 안 떠요. 어떻게 해야 하나요?"
+  },
+  "n": 5,
+  "p50": 5.643,
+  "p95": 6.063,
+  "max": 6.063,
+  "failures": 0,
+  "runs": [
+    {
+      "run": 1,
+      "status": 200,
+      "seconds": 6.063,
+      "response": {
+        "request_id": "wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5902,
+          "agents_ms": 1425,
+          "search_ms": 828,
+          "tech_ms": 3568
+        },
+        "reason": ""
+      }
+    },
+    {
+      "run": 2,
+      "status": 200,
+      "seconds": 4.942,
+      "response": {
+        "request_id": "wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 4803,
+          "agents_ms": 1342,
+          "search_ms": 327,
+          "tech_ms": 3044
+        },
+        "reason": ""
+      }
+    },
+    {
+      "run": 3,
+      "status": 200,
+      "seconds": 5.643,
+      "response": {
+        "request_id": "wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5477,
+          "agents_ms": 1515,
+          "search_ms": 583,
+          "tech_ms": 3283
+        },
+        "reason": ""
+      }
+    },
+    {
+      "run": 4,
+      "status": 200,
+      "seconds": 5.908,
+      "response": {
+        "request_id": "wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고, 휴대폰 시간이 자동 설정인지 확인하세요. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 5738,
+          "agents_ms": 1523,
+          "search_ms": 354,
+          "tech_ms": 3751
+        },
+        "reason": ""
+      }
+    },
+    {
+      "run": 5,
+      "status": 200,
+      "seconds": 4.865,
+      "response": {
+        "request_id": "wf01",
+        "route": "자동 답변",
+        "answer": "앱을 5.2 이상 최신 버전으로 업데이트하고, 와이파이와 모바일 데이터를 바꿔가며 마이티켓을 새로고침하세요. 로그아웃 후 다시 로그인하고 휴대폰 시간이 자동 설정인지 확인합니다. 공연 시작 30분 이내면 현장 발권 창구로 가세요.",
+        "sources": [
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+            "score": 0.63
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "3. 입장 게이트에서 인식되지 않을 때",
+            "score": 0.533
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "1. 모바일티켓이 열리는 시점",
+            "score": 0.512
+          },
+          {
+            "doc": "mobile-ticket-troubleshooting",
+            "section": "4. 상담원 연결이 필요한 경우",
+            "score": 0.491
+          }
+        ],
+        "ticket": null,
+        "agents": {
+          "used": [
+            "ticketmoa-agents",
+            "ticketmoa-search",
+            "ticketmoa-tech"
+          ],
+          "llm_calls": 3,
+          "intents": [
+            "tech_issue"
+          ],
+          "confidence": 0.95,
+          "alert": null
+        },
+        "security": {
+          "blocked_by": "",
+          "reason": "",
+          "masked": 0
+        },
+        "timings": {
+          "total_ms": 4669,
+          "agents_ms": 1283,
+          "search_ms": 328,
+          "tech_ms": 2972
+        },
+        "reason": ""
+      }
+    }
+  ]
+}

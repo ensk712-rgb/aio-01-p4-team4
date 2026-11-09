@@ -185,3 +185,13 @@ html, body { margin: 0; height: 100%; background: #e9ecf1; color: var(--ink); }
   .phone { height: 80vh; }
   .row { flex-wrap: wrap; }
 }
+
+/* ── /demo 왼쪽 칸 (?compact=1) ─────────── */
+body.compact .stage { grid-template-columns: 1fr; max-width: none; max-height: none; padding: 10px; }
+body.compact .flow { display: none; }
+body.compact .phone .examples {
+  max-width: none;
+  display: flex; flex-wrap: nowrap; gap: 4px; overflow-x: auto; padding: 6px 10px;
+  background: rgba(255, 255, 255, .35); justify-content: flex-start;
+}
+body.compact .phone .examples button { flex: none; font-size: 11px; padding: 3px 8px; }

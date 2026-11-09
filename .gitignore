@@ -2,3 +2,9 @@
 *.key
 node_modules/
 .DS_Store
+backups/
+cache/
+__pycache__/
+docker/release/ait4-fe.tar.gz
+docker/release/runtime.env.sh
+docker/release/runtime.env.sh.*

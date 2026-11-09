@@ -1,0 +1,4 @@
+html, body { margin: 0; height: 100%; background: #e9ecf1; }
+body { display: grid; grid-template-columns: 460px 1fr; gap: 0; }
+iframe { border: 0; width: 100%; height: 100%; display: block; }
+iframe.customer { border-right: 1px solid #d9dee5; }

@@ -1,0 +1,1965 @@
+{
+  "metadata": {
+    "run_id": "20261106T063854087633Z",
+    "started_at_utc": "2026-11-06T06:38:54.087Z",
+    "environment": "aio-t4",
+    "host": "aio-t4",
+    "git_branch": null,
+    "git_commit": null,
+    "git_worktree_status_at_start": null,
+    "n8n_endpoint": "http://localhost:5678",
+    "search_webhook": "ticketmoa-search",
+    "questions_path": "/home/toor/aio-01-p4-team4/docs/RAG-EVALUATION-QUESTIONS.csv",
+    "questions_sha256": "bf33b5c63e652626ce6cf0cf7623cd75a1bfc9f28997f495dc16582e4f9f38b0",
+    "question_count": 38,
+    "question_type_counts": {
+      "positive": 30,
+      "deny_staff": 2,
+      "no_ground": 4,
+      "no_external_leak": 2
+    },
+    "documents": [
+      {
+        "filename": "app-login-troubleshooting.md",
+        "doc": "app-login-troubleshooting",
+        "sha256": "deef6079c1727f1ce00f274ee5ab979e4a78ac8089fa1fe8278d27d24c501f6f"
+      },
+      {
+        "filename": "fair-booking-policy.md",
+        "doc": "fair-booking-policy",
+        "sha256": "187cb4a08eb52189e6aa632492c6a754e55d646724d5cbfdc009b098754c6318"
+      },
+      {
+        "filename": "mobile-ticket-troubleshooting.md",
+        "doc": "mobile-ticket-troubleshooting",
+        "sha256": "d5b6a611ddc960bbe4422c562f8139429def5b2fbbab5d203458a4e22fcd543f"
+      },
+      {
+        "filename": "onsite-entry-fallback.md",
+        "doc": "onsite-entry-fallback",
+        "sha256": "2b415dce805ffb67e2d29cdc9818a71978c41706e62e8ed4dbad69d59c382287"
+      },
+      {
+        "filename": "payment-error-guide.md",
+        "doc": "payment-error-guide",
+        "sha256": "825a14f71dbc846e514caf06205299483973e5b77139cb29ef664bc8fd00fc65"
+      },
+      {
+        "filename": "refund-policy.md",
+        "doc": "refund-policy",
+        "sha256": "950a985d86909efa851f487c3031291947e9f0d659fb6617d260bf0a4a83ed6e"
+      },
+      {
+        "filename": "staff-entry-manual.md",
+        "doc": "staff-entry-manual",
+        "sha256": "871758830bb01b501eef94afb7eb9037a9c68e51cac52a0af413557be39333b3"
+      },
+      {
+        "filename": "venue-faq.md",
+        "doc": "venue-faq",
+        "sha256": "3fe51871b7799d9655e408c4d77e8061f5e384262d4a66bb1d19d6b7ff6f8ba6"
+      }
+    ],
+    "document_count": 8,
+    "request_policy": {
+      "top_k": 3,
+      "timeout_seconds": 30.0,
+      "interval_seconds": 0.25,
+      "automatic_retries": 0,
+      "expected_search_requests": 38,
+      "expected_embedding_node_calls_estimate": 42,
+      "note": "VM search webhook only; no direct OpenAI API call, answer generation, reindex, or workflow modification by this script."
+    },
+    "finished_at_utc": "2026-11-06T06:39:18.100Z"
+  },
+  "summary": {
+    "question_count": 38,
+    "positive": {
+      "question_count": 30,
+      "scored_count": 30,
+      "success_count": 30,
+      "miss_count": 0,
+      "hit_at_3": "30/30",
+      "rate": 1.0,
+      "failed_question_ids": [],
+      "error_question_ids": []
+    },
+    "deny_staff": {
+      "question_count": 2,
+      "scored_count": 2,
+      "staff_doc_leak_count": 0,
+      "staff_doc_leak_question_ids": [],
+      "staff_body_leak_count": 0,
+      "staff_body_leak_question_ids": []
+    },
+    "no_ground": {
+      "question_count": 4,
+      "retrieval_only_count": 4,
+      "retrieved_any_count": 4,
+      "answer_safety_assessed": false
+    },
+    "no_external_leak": {
+      "question_count": 2,
+      "retrieval_only_count": 2,
+      "unapproved_doc_leak_count": 0,
+      "external_reference_leak_count": 0,
+      "generated_answer_safety_assessed": false
+    },
+    "request_or_api_errors": []
+  },
+  "questions": [
+    {
+      "id": "Q01",
+      "role": "all",
+      "question": "로그인했는데 앱이 계속 튕겨요. 어떻게 해야 하나요?",
+      "test_type": "positive",
+      "expected_doc": "app-login-troubleshooting",
+      "expected_sections": [
+        "1. 로그인이 반복되거나 튕길 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:54.093Z",
+      "http_status": 200,
+      "request_duration_ms": 645.3,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "1. 로그인이 반복되거나 튕길 때",
+          "score": 0.638,
+          "text": "# app-login-troubleshooting\n## 1. 로그인이 반복되거나 튕길 때\n1. 앱을 완전히 종료한 뒤 다시 연다.\n2. [설정 > 앱 > 티켓모아 > 저장공간]에서 **캐시 삭제**를 한다 (데이터 삭제는 하지 않는다).\n3. 소셜 로그인(카카오·네이버·애플)으로 가입했다면 같은 소셜 계정으로 로그인한다. 이메일로 로그인하면 다른 계정으로 인식된다.\n4. 그래도 반복되면 로그인 계정과 예매 내역의 연결 여부를 먼저 확인한 뒤 앱 재설치를 안내한다. 예매 내역은 계정에 연결되어 있으므로, 재설치 전 올바른 계정인지 먼저 확인한다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "2. 비밀번호와 계정 잠김",
+          "score": 0.494,
+          "text": "# app-login-troubleshooting\n## 2. 비밀번호와 계정 잠김\n- 비밀번호를 5회 틀리면 계정이 **30분 동안 잠긴다.** 30분 뒤 다시 시도하거나 [비밀번호 찾기]로 재설정한다.\n- [비밀번호 찾기]는 가입한 이메일로 재설정 링크를 보낸다. 링크는 24시간 동안 유효하다.\n- 1년 이상 로그인하지 않은 계정은 휴면 계정으로 바뀐다. 로그인 화면의 [휴면 해제]에서 휴대폰 인증으로 풀 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+          "score": 0.445,
+          "text": "# app-login-troubleshooting\n## 5. 예매 전 본인인증 확인과 재시도 순서\n- 로그인 성공과 공연 예매에 필요한 본인인증 완료는 서로 다른 상태다. 로그인은 되지만 특정 공연의 예매가 제한되면 공연 상세 안내에서 본인인증 요구 여부를 먼저 확인한다.\n- 본인인증 상태와 유효기간은 해당 공연의 예매 상세 안내에서 확인한다. 유효하지 않은 경우 안내된 절차에 따라 재인증한다.\n- 인증 요청을 반복하기 전에 계정 정보·인증 상태·통신 환경을 확인한다. 이미 제한 횟수를 초과한 경우 우회 방법을 안내하지 않고 고객센터로 이관한다.\n- 본인확인에 필요한 민감한 정보나 인증번호를 챗봇 대화에 입력하도록 요청하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.638,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q02",
+      "role": "all",
+      "question": "비밀번호를 다섯 번 틀렸어요. 언제 다시 로그인할 수 있나요?",
+      "test_type": "positive",
+      "expected_doc": "app-login-troubleshooting",
+      "expected_sections": [
+        "2. 비밀번호와 계정 잠김"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:54.989Z",
+      "http_status": 200,
+      "request_duration_ms": 342.558,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "2. 비밀번호와 계정 잠김",
+          "score": 0.638,
+          "text": "# app-login-troubleshooting\n## 2. 비밀번호와 계정 잠김\n- 비밀번호를 5회 틀리면 계정이 **30분 동안 잠긴다.** 30분 뒤 다시 시도하거나 [비밀번호 찾기]로 재설정한다.\n- [비밀번호 찾기]는 가입한 이메일로 재설정 링크를 보낸다. 링크는 24시간 동안 유효하다.\n- 1년 이상 로그인하지 않은 계정은 휴면 계정으로 바뀐다. 로그인 화면의 [휴면 해제]에서 휴대폰 인증으로 풀 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "3. 본인인증 문자가 오지 않을 때",
+          "score": 0.46,
+          "text": "# app-login-troubleshooting\n## 3. 본인인증 문자가 오지 않을 때\n- 문자 수신 차단 목록에 티켓모아 발신 번호가 있는지 확인한다.\n- 알뜰폰 사용자는 통신사 앱에서 \"본인확인 서비스\" 동의가 되어 있어야 한다.\n- 인증 문자는 하루 5회까지 다시 받을 수 있다. 5회를 넘으면 다음 날 다시 시도하거나 상담원에게 연결한다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+          "score": 0.448,
+          "text": "# app-login-troubleshooting\n## 5. 예매 전 본인인증 확인과 재시도 순서\n- 로그인 성공과 공연 예매에 필요한 본인인증 완료는 서로 다른 상태다. 로그인은 되지만 특정 공연의 예매가 제한되면 공연 상세 안내에서 본인인증 요구 여부를 먼저 확인한다.\n- 본인인증 상태와 유효기간은 해당 공연의 예매 상세 안내에서 확인한다. 유효하지 않은 경우 안내된 절차에 따라 재인증한다.\n- 인증 요청을 반복하기 전에 계정 정보·인증 상태·통신 환경을 확인한다. 이미 제한 횟수를 초과한 경우 우회 방법을 안내하지 않고 고객센터로 이관한다.\n- 본인확인에 필요한 민감한 정보나 인증번호를 챗봇 대화에 입력하도록 요청하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.638,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q03",
+      "role": "all",
+      "question": "본인인증 문자가 오지 않아요. 재전송 횟수도 다 썼어요.",
+      "test_type": "positive",
+      "expected_doc": "app-login-troubleshooting",
+      "expected_sections": [
+        "3. 본인인증 문자가 오지 않을 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:55.582Z",
+      "http_status": 200,
+      "request_duration_ms": 341.582,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "3. 본인인증 문자가 오지 않을 때",
+          "score": 0.617,
+          "text": "# app-login-troubleshooting\n## 3. 본인인증 문자가 오지 않을 때\n- 문자 수신 차단 목록에 티켓모아 발신 번호가 있는지 확인한다.\n- 알뜰폰 사용자는 통신사 앱에서 \"본인확인 서비스\" 동의가 되어 있어야 한다.\n- 인증 문자는 하루 5회까지 다시 받을 수 있다. 5회를 넘으면 다음 날 다시 시도하거나 상담원에게 연결한다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+          "score": 0.425,
+          "text": "# app-login-troubleshooting\n## 5. 예매 전 본인인증 확인과 재시도 순서\n- 로그인 성공과 공연 예매에 필요한 본인인증 완료는 서로 다른 상태다. 로그인은 되지만 특정 공연의 예매가 제한되면 공연 상세 안내에서 본인인증 요구 여부를 먼저 확인한다.\n- 본인인증 상태와 유효기간은 해당 공연의 예매 상세 안내에서 확인한다. 유효하지 않은 경우 안내된 절차에 따라 재인증한다.\n- 인증 요청을 반복하기 전에 계정 정보·인증 상태·통신 환경을 확인한다. 이미 제한 횟수를 초과한 경우 우회 방법을 안내하지 않고 고객센터로 이관한다.\n- 본인확인에 필요한 민감한 정보나 인증번호를 챗봇 대화에 입력하도록 요청하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "2. 비밀번호와 계정 잠김",
+          "score": 0.367,
+          "text": "# app-login-troubleshooting\n## 2. 비밀번호와 계정 잠김\n- 비밀번호를 5회 틀리면 계정이 **30분 동안 잠긴다.** 30분 뒤 다시 시도하거나 [비밀번호 찾기]로 재설정한다.\n- [비밀번호 찾기]는 가입한 이메일로 재설정 링크를 보낸다. 링크는 24시간 동안 유효하다.\n- 1년 이상 로그인하지 않은 계정은 휴면 계정으로 바뀐다. 로그인 화면의 [휴면 해제]에서 휴대폰 인증으로 풀 수 있다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.617,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q04",
+      "role": "all",
+      "question": "로그인은 되는데 특정 공연 예매가 안 돼요. 본인인증을 또 해야 하나요?",
+      "test_type": "positive",
+      "expected_doc": "app-login-troubleshooting",
+      "expected_sections": [
+        "5. 예매 전 본인인증 확인과 재시도 순서"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:56.174Z",
+      "http_status": 200,
+      "request_duration_ms": 316.651,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+          "score": 0.735,
+          "text": "# app-login-troubleshooting\n## 5. 예매 전 본인인증 확인과 재시도 순서\n- 로그인 성공과 공연 예매에 필요한 본인인증 완료는 서로 다른 상태다. 로그인은 되지만 특정 공연의 예매가 제한되면 공연 상세 안내에서 본인인증 요구 여부를 먼저 확인한다.\n- 본인인증 상태와 유효기간은 해당 공연의 예매 상세 안내에서 확인한다. 유효하지 않은 경우 안내된 절차에 따라 재인증한다.\n- 인증 요청을 반복하기 전에 계정 정보·인증 상태·통신 환경을 확인한다. 이미 제한 횟수를 초과한 경우 우회 방법을 안내하지 않고 고객센터로 이관한다.\n- 본인확인에 필요한 민감한 정보나 인증번호를 챗봇 대화에 입력하도록 요청하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "3. 해외에서 접속했을 때",
+          "score": 0.554,
+          "text": "# fair-booking-policy\n## 3. 해외에서 접속했을 때\n- 일부 공연은 공연사 요청으로 **국내 접속에서만 예매**할 수 있다. 해외 IP로 접속하면 \"현재 지역에서는 예매할 수 없습니다\"가 표시된다.\n- 해외 체류 중인 회원은 [마이페이지 > 해외 예매 인증]에서 본인인증을 마치면 예매할 수 있다 (공연마다 허용 여부가 다름).\n- VPN·프록시로 접속 지역을 바꾸면 부정 접속으로 판단되어 예매가 제한될 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "1. 로그인이 반복되거나 튕길 때",
+          "score": 0.551,
+          "text": "# app-login-troubleshooting\n## 1. 로그인이 반복되거나 튕길 때\n1. 앱을 완전히 종료한 뒤 다시 연다.\n2. [설정 > 앱 > 티켓모아 > 저장공간]에서 **캐시 삭제**를 한다 (데이터 삭제는 하지 않는다).\n3. 소셜 로그인(카카오·네이버·애플)으로 가입했다면 같은 소셜 계정으로 로그인한다. 이메일로 로그인하면 다른 계정으로 인식된다.\n4. 그래도 반복되면 로그인 계정과 예매 내역의 연결 여부를 먼저 확인한 뒤 앱 재설치를 안내한다. 예매 내역은 계정에 연결되어 있으므로, 재설치 전 올바른 계정인지 먼저 확인한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.735,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q05",
+      "role": "all",
+      "question": "매크로 의심이라고 24시간 예매 제한이 걸렸어요. 풀어주세요.",
+      "test_type": "positive",
+      "expected_doc": "fair-booking-policy",
+      "expected_sections": [
+        "2. 매크로 의심으로 예매가 막혔을 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:56.741Z",
+      "http_status": 200,
+      "request_duration_ms": 321.798,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "fair-booking-policy",
+          "section": "2. 매크로 의심으로 예매가 막혔을 때",
+          "score": 0.512,
+          "text": "# fair-booking-policy\n## 2. 매크로 의심으로 예매가 막혔을 때\n- 짧은 시간에 같은 동작이 비정상적으로 반복되거나, 사람의 화면 터치·마우스 입력이 아닌 자동 입력이 감지되면 **보안 문자 입력**을 요구한다.\n- 보안 문자를 3회 틀리거나 자동 입력이 반복되면 그 계정의 예매가 **24시간 제한**된다.\n- 제한은 24시간 뒤 자동으로 풀린다. 본인이 직접 예매했는데 제한됐다면 상담원에게 연결해 이의 신청을 한다 (챗봇이 제한을 직접 풀지 않는다).\n- 키보드 매크로 프로그램, 자동 클릭 장치, 여러 기기 동시 접속은 이용약관 위반이며 적발되면 예매가 취소될 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "1. 왜 막는가",
+          "score": 0.456,
+          "text": "# fair-booking-policy\n## 1. 왜 막는가\n- 티켓모아는 정가보다 비싸게 되파는 **암표**와, 사람 대신 프로그램이 예매 버튼을 누르는 **매크로**를 막기 위해 부정 예매 방지 시스템을 운영한다.\n- 인기 공연의 예매 오픈 시간에는 아래 2~4절의 확인이 더 엄격해진다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "5. 공연별 제한과 비정상 예매 대응",
+          "score": 0.427,
+          "text": "# fair-booking-policy\n## 5. 공연별 제한과 비정상 예매 대응\n- 매크로·자동 클릭 등 비정상적인 예매는 제한될 수 있다. 동일 계정의 다중 접속 제한 여부는 해당 공연 안내를 확인한다.\n- 제한 사유 안내와 계정 제한 해제는 구분한다. AI는 확인된 정책을 설명하고 이의 신청 방법을 안내하지만, 예매 제한을 임의로 해제하거나 부정예매 판정을 확정하지 않는다.\n- 해외 접속 불가 문의는 모든 해외 IP를 막는다고 단정하지 않는다. 해당 공연이 국내 접속만 허용하는지, 계정 인증이나 결제수단 제한이 있는지를 구분하여 안내한다.\n- 암표 신고에서는 판매 글의 주소·공연·좌석 정보 등 필요한 최소 정보만 수집하고 공개 채팅에 신고자 연락처나 결제정보를 남기지 않는다. 접수 후 판정 및 조치는 보안팀이 수행한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.512,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q06",
+      "role": "all",
+      "question": "해외에서 예매하려는데 지역 제한 메시지가 나와요.",
+      "test_type": "positive",
+      "expected_doc": "fair-booking-policy",
+      "expected_sections": [
+        "3. 해외에서 접속했을 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:57.315Z",
+      "http_status": 200,
+      "request_duration_ms": 372.773,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "fair-booking-policy",
+          "section": "3. 해외에서 접속했을 때",
+          "score": 0.611,
+          "text": "# fair-booking-policy\n## 3. 해외에서 접속했을 때\n- 일부 공연은 공연사 요청으로 **국내 접속에서만 예매**할 수 있다. 해외 IP로 접속하면 \"현재 지역에서는 예매할 수 없습니다\"가 표시된다.\n- 해외 체류 중인 회원은 [마이페이지 > 해외 예매 인증]에서 본인인증을 마치면 예매할 수 있다 (공연마다 허용 여부가 다름).\n- VPN·프록시로 접속 지역을 바꾸면 부정 접속으로 판단되어 예매가 제한될 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "5. 공연별 제한과 비정상 예매 대응",
+          "score": 0.478,
+          "text": "# fair-booking-policy\n## 5. 공연별 제한과 비정상 예매 대응\n- 매크로·자동 클릭 등 비정상적인 예매는 제한될 수 있다. 동일 계정의 다중 접속 제한 여부는 해당 공연 안내를 확인한다.\n- 제한 사유 안내와 계정 제한 해제는 구분한다. AI는 확인된 정책을 설명하고 이의 신청 방법을 안내하지만, 예매 제한을 임의로 해제하거나 부정예매 판정을 확정하지 않는다.\n- 해외 접속 불가 문의는 모든 해외 IP를 막는다고 단정하지 않는다. 해당 공연이 국내 접속만 허용하는지, 계정 인증이나 결제수단 제한이 있는지를 구분하여 안내한다.\n- 암표 신고에서는 판매 글의 주소·공연·좌석 정보 등 필요한 최소 정보만 수집하고 공개 채팅에 신고자 연락처나 결제정보를 남기지 않는다. 접수 후 판정 및 조치는 보안팀이 수행한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "3. 결제가 실패할 때",
+          "score": 0.44,
+          "text": "# payment-error-guide\n## 3. 결제가 실패할 때\n- 카드 한도, 해외 결제 차단, 간편결제 앱의 인증 시간 초과(3분)가 흔한 원인이다.\n- 같은 카드로 3회 연속 실패하면 30분 동안 그 카드로 결제할 수 없다. 다른 결제 수단을 쓰거나 30분 뒤 다시 시도한다.\n- 결제 중 앱이 꺼졌다면 결제 여부를 [마이페이지 > 결제 내역]에서 먼저 확인한 뒤 다시 예매한다. 바로 다시 예매하면 이중결제가 될 수 있다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.611,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q07",
+      "role": "all",
+      "question": "SNS에서 암표를 발견했는데 어떻게 신고하나요?",
+      "test_type": "positive",
+      "expected_doc": "fair-booking-policy",
+      "expected_sections": [
+        "4. 암표 신고"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:57.938Z",
+      "http_status": 200,
+      "request_duration_ms": 350.06,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "fair-booking-policy",
+          "section": "4. 암표 신고",
+          "score": 0.46,
+          "text": "# fair-booking-policy\n## 4. 암표 신고\n- 중고거래 사이트·SNS에서 정가보다 비싸게 판매되는 티켓을 발견하면 판매 게시글 주소와 공연명·좌석 정보를 알려 준다.\n- 신고는 **보안팀**으로 넘어가며, 확인되면 해당 예매는 취소되고 좌석은 다시 판매된다.\n- 신고자의 이름과 연락처는 보안팀만 보며 판매자에게 알리지 않는다.\n- 이미 암표를 구매한 경우 입장이 거부될 수 있으며, 티켓모아는 정식 판매처 외에서 산 티켓의 환불을 보장하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "5. 공연별 제한과 비정상 예매 대응",
+          "score": 0.29,
+          "text": "# fair-booking-policy\n## 5. 공연별 제한과 비정상 예매 대응\n- 매크로·자동 클릭 등 비정상적인 예매는 제한될 수 있다. 동일 계정의 다중 접속 제한 여부는 해당 공연 안내를 확인한다.\n- 제한 사유 안내와 계정 제한 해제는 구분한다. AI는 확인된 정책을 설명하고 이의 신청 방법을 안내하지만, 예매 제한을 임의로 해제하거나 부정예매 판정을 확정하지 않는다.\n- 해외 접속 불가 문의는 모든 해외 IP를 막는다고 단정하지 않는다. 해당 공연이 국내 접속만 허용하는지, 계정 인증이나 결제수단 제한이 있는지를 구분하여 안내한다.\n- 암표 신고에서는 판매 글의 주소·공연·좌석 정보 등 필요한 최소 정보만 수집하고 공개 채팅에 신고자 연락처나 결제정보를 남기지 않는다. 접수 후 판정 및 조치는 보안팀이 수행한다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "3. 본인인증 문자가 오지 않을 때",
+          "score": 0.243,
+          "text": "# app-login-troubleshooting\n## 3. 본인인증 문자가 오지 않을 때\n- 문자 수신 차단 목록에 티켓모아 발신 번호가 있는지 확인한다.\n- 알뜰폰 사용자는 통신사 앱에서 \"본인확인 서비스\" 동의가 되어 있어야 한다.\n- 인증 문자는 하루 5회까지 다시 받을 수 있다. 5회를 넘으면 다음 날 다시 시도하거나 상담원에게 연결한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.46,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q08",
+      "role": "all",
+      "question": "공연 두 시간 전인데 QR이 아직 준비 중이에요.",
+      "test_type": "positive",
+      "expected_doc": "mobile-ticket-troubleshooting",
+      "expected_sections": [
+        "1. 모바일티켓이 열리는 시점"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:58.538Z",
+      "http_status": 200,
+      "request_duration_ms": 288.308,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "1. 모바일티켓이 열리는 시점",
+          "score": 0.55,
+          "text": "# mobile-ticket-troubleshooting\n## 1. 모바일티켓이 열리는 시점\n- 모바일티켓 QR은 공연 시작 **3시간 전**부터 티켓모아 앱의 [마이티켓]에 표시된다. 그 전에는 \"QR 준비 중\"으로 보이는 것이 정상이다.\n- QR은 화면 캡처를 막기 위해 **30초마다 바뀐다.** 캡처한 QR 이미지는 입장 게이트에서 인식되지 않는다.\n- 선물받은 티켓은 받은 사람이 [선물함]에서 **수락**해야 받은 사람의 마이티켓에 QR이 생긴다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.509,
+          "text": "# mobile-ticket-troubleshooting\n## 2. QR이 안 뜨거나 회색으로 보일 때\n1. 앱을 최신 버전으로 업데이트한다 (앱 버전 5.2 미만은 QR이 표시되지 않는다).\n2. 와이파이와 모바일 데이터를 바꿔 가며 [마이티켓]을 아래로 당겨 새로고침한다.\n3. 로그아웃 후 다시 로그인한다. 예매한 계정과 같은 계정인지 확인한다.\n4. 휴대폰 시간이 \"자동 설정\"인지 확인한다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시된다.\n5. 위 방법으로 안 되고 공연 시작이 30분 이내라면 문제 해결을 멈추고 [현장 발권·대체 입장 안내](onsite-entry-fallback)에 따라 현장 발권 창구로 간다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.474,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.55,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q09",
+      "role": "all",
+      "question": "모바일티켓 QR이 회색으로 보이고 안 떠요.",
+      "test_type": "positive",
+      "expected_doc": "mobile-ticket-troubleshooting",
+      "expected_sections": [
+        "2. QR이 안 뜨거나 회색으로 보일 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:59.077Z",
+      "http_status": 200,
+      "request_duration_ms": 404.758,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.616,
+          "text": "# mobile-ticket-troubleshooting\n## 2. QR이 안 뜨거나 회색으로 보일 때\n1. 앱을 최신 버전으로 업데이트한다 (앱 버전 5.2 미만은 QR이 표시되지 않는다).\n2. 와이파이와 모바일 데이터를 바꿔 가며 [마이티켓]을 아래로 당겨 새로고침한다.\n3. 로그아웃 후 다시 로그인한다. 예매한 계정과 같은 계정인지 확인한다.\n4. 휴대폰 시간이 \"자동 설정\"인지 확인한다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시된다.\n5. 위 방법으로 안 되고 공연 시작이 30분 이내라면 문제 해결을 멈추고 [현장 발권·대체 입장 안내](onsite-entry-fallback)에 따라 현장 발권 창구로 간다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "3. 입장 게이트에서 인식되지 않을 때",
+          "score": 0.515,
+          "text": "# mobile-ticket-troubleshooting\n## 3. 입장 게이트에서 인식되지 않을 때\n- 화면 밝기를 최대로 올리고, 보호 필름 반사가 없도록 QR을 게이트 스캐너에서 10cm 정도 떨어뜨린다.\n- \"이미 사용된 티켓\" 오류는 같은 티켓이 다른 기기에서 먼저 입장 처리된 경우다. 직접 해결하지 말고 현장 스태프에게 예매번호를 보여 준다.\n- 게이트 전체가 인식하지 못하는 경우(여러 관객이 동시에 실패)는 게이트 장애이므로 현장 안내에 따른다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "1. 모바일티켓이 열리는 시점",
+          "score": 0.513,
+          "text": "# mobile-ticket-troubleshooting\n## 1. 모바일티켓이 열리는 시점\n- 모바일티켓 QR은 공연 시작 **3시간 전**부터 티켓모아 앱의 [마이티켓]에 표시된다. 그 전에는 \"QR 준비 중\"으로 보이는 것이 정상이다.\n- QR은 화면 캡처를 막기 위해 **30초마다 바뀐다.** 캡처한 QR 이미지는 입장 게이트에서 인식되지 않는다.\n- 선물받은 티켓은 받은 사람이 [선물함]에서 **수락**해야 받은 사람의 마이티켓에 QR이 생긴다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.616,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q10",
+      "role": "all",
+      "question": "QR 스캔하면 이미 사용된 티켓이라고 나옵니다.",
+      "test_type": "positive",
+      "expected_doc": "mobile-ticket-troubleshooting",
+      "expected_sections": [
+        "3. 입장 게이트에서 인식되지 않을 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:38:59.732Z",
+      "http_status": 200,
+      "request_duration_ms": 396.543,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "3. 입장 게이트에서 인식되지 않을 때",
+          "score": 0.5,
+          "text": "# mobile-ticket-troubleshooting\n## 3. 입장 게이트에서 인식되지 않을 때\n- 화면 밝기를 최대로 올리고, 보호 필름 반사가 없도록 QR을 게이트 스캐너에서 10cm 정도 떨어뜨린다.\n- \"이미 사용된 티켓\" 오류는 같은 티켓이 다른 기기에서 먼저 입장 처리된 경우다. 직접 해결하지 말고 현장 스태프에게 예매번호를 보여 준다.\n- 게이트 전체가 인식하지 못하는 경우(여러 관객이 동시에 실패)는 게이트 장애이므로 현장 안내에 따른다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "1. 모바일티켓이 열리는 시점",
+          "score": 0.469,
+          "text": "# mobile-ticket-troubleshooting\n## 1. 모바일티켓이 열리는 시점\n- 모바일티켓 QR은 공연 시작 **3시간 전**부터 티켓모아 앱의 [마이티켓]에 표시된다. 그 전에는 \"QR 준비 중\"으로 보이는 것이 정상이다.\n- QR은 화면 캡처를 막기 위해 **30초마다 바뀐다.** 캡처한 QR 이미지는 입장 게이트에서 인식되지 않는다.\n- 선물받은 티켓은 받은 사람이 [선물함]에서 **수락**해야 받은 사람의 마이티켓에 QR이 생긴다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.467,
+          "text": "# mobile-ticket-troubleshooting\n## 2. QR이 안 뜨거나 회색으로 보일 때\n1. 앱을 최신 버전으로 업데이트한다 (앱 버전 5.2 미만은 QR이 표시되지 않는다).\n2. 와이파이와 모바일 데이터를 바꿔 가며 [마이티켓]을 아래로 당겨 새로고침한다.\n3. 로그아웃 후 다시 로그인한다. 예매한 계정과 같은 계정인지 확인한다.\n4. 휴대폰 시간이 \"자동 설정\"인지 확인한다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시된다.\n5. 위 방법으로 안 되고 공연 시작이 30분 이내라면 문제 해결을 멈추고 [현장 발권·대체 입장 안내](onsite-entry-fallback)에 따라 현장 발권 창구로 간다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.5,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q11",
+      "role": "all",
+      "question": "공연 15분 전인데 QR이 안 됩니다. 어디로 가야 하나요?",
+      "test_type": "positive",
+      "expected_doc": "onsite-entry-fallback",
+      "expected_sections": [
+        "1. 원칙: 입장이 먼저",
+        "2. 방법 1: 현장 발권 창구",
+        "5. 현장 스태프 알림"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:00.379Z",
+      "http_status": 200,
+      "request_duration_ms": 446.172,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "2. QR이 안 뜨거나 회색으로 보일 때",
+          "score": 0.536,
+          "text": "# mobile-ticket-troubleshooting\n## 2. QR이 안 뜨거나 회색으로 보일 때\n1. 앱을 최신 버전으로 업데이트한다 (앱 버전 5.2 미만은 QR이 표시되지 않는다).\n2. 와이파이와 모바일 데이터를 바꿔 가며 [마이티켓]을 아래로 당겨 새로고침한다.\n3. 로그아웃 후 다시 로그인한다. 예매한 계정과 같은 계정인지 확인한다.\n4. 휴대폰 시간이 \"자동 설정\"인지 확인한다. 시간이 5분 이상 어긋나면 QR이 회색으로 표시된다.\n5. 위 방법으로 안 되고 공연 시작이 30분 이내라면 문제 해결을 멈추고 [현장 발권·대체 입장 안내](onsite-entry-fallback)에 따라 현장 발권 창구로 간다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.529,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "2. 방법 1: 현장 발권 창구",
+          "score": 0.522,
+          "text": "# onsite-entry-fallback\n## 2. 방법 1: 현장 발권 창구\n1. 공연장 1층 **현장 발권 창구**로 간다 (공연 시작 1시간 전부터 공연 시작 후 20분까지 운영).\n2. **예매번호**와 예매자 본인의 **신분증**을 보여 준다.\n3. 종이 티켓을 받아 바로 입장한다. 종이 티켓을 받으면 같은 예매의 모바일티켓은 자동으로 사용 처리된다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.536,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q12",
+      "role": "all",
+      "question": "현장 발권 창구에서 종이 티켓을 받으려면 무엇이 필요한가요?",
+      "test_type": "positive",
+      "expected_doc": "onsite-entry-fallback",
+      "expected_sections": [
+        "2. 방법 1: 현장 발권 창구"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:01.076Z",
+      "http_status": 200,
+      "request_duration_ms": 402.572,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "2. 방법 1: 현장 발권 창구",
+          "score": 0.602,
+          "text": "# onsite-entry-fallback\n## 2. 방법 1: 현장 발권 창구\n1. 공연장 1층 **현장 발권 창구**로 간다 (공연 시작 1시간 전부터 공연 시작 후 20분까지 운영).\n2. **예매번호**와 예매자 본인의 **신분증**을 보여 준다.\n3. 종이 티켓을 받아 바로 입장한다. 종이 티켓을 받으면 같은 예매의 모바일티켓은 자동으로 사용 처리된다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "3. 방법 2: 예매자 이름 확인 입장",
+          "score": 0.459,
+          "text": "# onsite-entry-fallback\n## 3. 방법 2: 예매자 이름 확인 입장\n- 신분증이 없다면 현장 발권 창구에서 예매자 이름과 휴대폰 번호 뒷자리 4자리로 추가 본인 확인을 요청한다. 발권 여부는 현장 직원의 확인 후 결정되며 챗봇이 입장을 승인하지 않는다.\n- 대리인은 이 방법을 쓸 수 없다. 대리인은 예매자의 [티켓 선물하기]로 받은 모바일티켓이 있어야 한다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "5. 모바일티켓 수령 방식과 현장 확인",
+          "score": 0.449,
+          "text": "# mobile-ticket-troubleshooting\n## 5. 모바일티켓 수령 방식과 현장 확인\n- 모바일티켓을 선택한 예매인지, 해당 공연이 모바일티켓 입장을 지원하는지 먼저 확인한다. 일부 공연은 모바일티켓과 현장 수령 절차가 다르므로 공연 상세 안내가 우선한다.\n- 캡처한 QR이나 다른 사람의 예매 정보를 대체 입장 수단으로 안내하지 않는다.\n- 공연장 주변에 접속자가 많으면 티켓 표시가 느려질 수 있다. 공연장 도착 전 공식 앱 로그인과 해당 공연의 모바일티켓 표시 상태를 확인하도록 권한다. 다만 유효한 실시간 QR 없이 저장 이미지로 입장할 수 있다고 약속하지 않는다.\n- 모바일티켓을 선물한 경우 선물 수락·등록 여부를 확인한다. 티켓 취소·선물 회수는 예매처별 절차가 달라 확인되지 않은 자동 처리 방법을 안내하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.602,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q13",
+      "role": "all",
+      "question": "신분증을 놓고 왔는데 현장에서 어떻게 확인하나요?",
+      "test_type": "positive",
+      "expected_doc": "onsite-entry-fallback",
+      "expected_sections": [
+        "3. 방법 2: 예매자 이름 확인 입장"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:01.729Z",
+      "http_status": 200,
+      "request_duration_ms": 349.406,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "6. 현장 본인 확인과 예외 상황",
+          "score": 0.511,
+          "text": "# onsite-entry-fallback\n## 6. 현장 본인 확인과 예외 상황\n- 현장 수령에 필요한 신분증과 예매내역을 준비한다. 개별 공연에서 별도의 수령·입장 기준을 공지했다면 해당 공연 안내를 확인한다.\n- 이름과 휴대전화 뒷자리 확인만으로 챗봇이 본인확인 완료나 입장을 확정하지 않는다. 현장 담당자가 확인한다.\n- 현장 창구에서 예매내역을 확인할 수 없거나 이미 사용된 티켓으로 표시되면 AI가 입장을 허용하지 않고 현장 스태프에게 전달한다.\n- 공연 시작이 임박했을 때는 고객에게 현장 창구 위치·지참 서류·알림 여부를 간결하게 먼저 안내하고, 상세한 앱 진단은 뒤에 제공한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "3. 방법 2: 예매자 이름 확인 입장",
+          "score": 0.471,
+          "text": "# onsite-entry-fallback\n## 3. 방법 2: 예매자 이름 확인 입장\n- 신분증이 없다면 현장 발권 창구에서 예매자 이름과 휴대폰 번호 뒷자리 4자리로 추가 본인 확인을 요청한다. 발권 여부는 현장 직원의 확인 후 결정되며 챗봇이 입장을 승인하지 않는다.\n- 대리인은 이 방법을 쓸 수 없다. 대리인은 예매자의 [티켓 선물하기]로 받은 모바일티켓이 있어야 한다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "5. 예매 전 본인인증 확인과 재시도 순서",
+          "score": 0.401,
+          "text": "# app-login-troubleshooting\n## 5. 예매 전 본인인증 확인과 재시도 순서\n- 로그인 성공과 공연 예매에 필요한 본인인증 완료는 서로 다른 상태다. 로그인은 되지만 특정 공연의 예매가 제한되면 공연 상세 안내에서 본인인증 요구 여부를 먼저 확인한다.\n- 본인인증 상태와 유효기간은 해당 공연의 예매 상세 안내에서 확인한다. 유효하지 않은 경우 안내된 절차에 따라 재인증한다.\n- 인증 요청을 반복하기 전에 계정 정보·인증 상태·통신 환경을 확인한다. 이미 제한 횟수를 초과한 경우 우회 방법을 안내하지 않고 고객센터로 이관한다.\n- 본인확인에 필요한 민감한 정보나 인증번호를 챗봇 대화에 입력하도록 요청하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.511,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q14",
+      "role": "all",
+      "question": "공연이 시작됐는데 지연 입장이 가능한가요?",
+      "test_type": "positive",
+      "expected_doc": "onsite-entry-fallback",
+      "expected_sections": [
+        "4. 방법 3: 지연 입장"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:02.329Z",
+      "http_status": 200,
+      "request_duration_ms": 330.034,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "4. 방법 3: 지연 입장",
+          "score": 0.524,
+          "text": "# onsite-entry-fallback\n## 4. 방법 3: 지연 입장\n- 공연이 시작된 뒤에는 공연장 안내에 따라 **지연 입장 시간**(보통 첫 곡 또는 1막 첫 장면 뒤)에 입장한다.\n- 지연 입장으로 놓친 시간은 환불 대상이 아니다. 단, 게이트 장애처럼 티켓모아 쪽 원인으로 입장이 늦어진 경우는 상담원이 보상 여부를 판단한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.484,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "1. 원칙: 입장이 먼저",
+          "score": 0.438,
+          "text": "# onsite-entry-fallback\n## 1. 원칙: 입장이 먼저\n- 공연 시작 **30분 이내**에 모바일티켓 문제가 생기면, 원인 해결보다 대체 입장 방법을 먼저 안내한다.\n- 대체 입장 방법은 아래 세 가지뿐이다. 이 문서에 없는 방법(예: 캡처 화면으로 입장, 다른 사람 티켓으로 입장)은 안내하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.524,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q15",
+      "role": "all",
+      "question": "돈은 빠져나갔는데 예매 내역이 보이지 않아요.",
+      "test_type": "positive",
+      "expected_doc": "payment-error-guide",
+      "expected_sections": [
+        "1. 결제됐는데 예매 내역이 없을 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:02.909Z",
+      "http_status": 200,
+      "request_duration_ms": 387.81,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "payment-error-guide",
+          "section": "5. 결제 승인과 예매 확정이 다른 경우",
+          "score": 0.465,
+          "text": "# payment-error-guide\n## 5. 결제 승인과 예매 확정이 다른 경우\n- 결제 수단에서 승인 내역이 보여도 예매가 확정되었는지 별도로 확인해야 한다. 먼저 동일 계정의 예매 내역과 결제 내역, 주문 시각을 비교한다.\n- 10분 경과만으로 좌석 확보 실패나 자동 취소 완료를 **확정하지 않는다**. 결제·예매 상태는 조회된 기록을 기준으로 판단한다.\n- 결제 승인만 있고 예매 확정 내역이 없거나 조회 결과가 서로 다르면 결제 승인번호 전체·카드번호를 요구하지 않고 상담원에게 이관한다.\n- 취소 또는 환급 시점은 카드사·결제 방식·처리 상태에 따라 달라질 수 있으므로 고객에게 특정 완료 시점을 확약하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "1. 결제됐는데 예매 내역이 없을 때",
+          "score": 0.456,
+          "text": "# payment-error-guide\n## 1. 결제됐는데 예매 내역이 없을 때\n- 결제 완료 후 예매 확정까지 **최대 10분**이 걸릴 수 있다. 10분 뒤 [마이티켓]을 새로고침한다.\n- 10분이 지나도 예매가 없으면 결제 승인 상태와 예매 확정 상태를 각각 확인한다. 좌석 확보 실패나 자동 취소를 확인하기 전에는 결과를 단정하지 않는다. 취소 처리가 확인된 경우 카드사 반영까지 3~5영업일이 걸릴 수 있다.\n- 24시간 안에 취소 안내를 받지 못했거나 결제·예매 조회 결과가 일치하지 않으면 상담원에게 연결한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "2. 이중결제가 의심될 때",
+          "score": 0.437,
+          "text": "# payment-error-guide\n## 2. 이중결제가 의심될 때\n- 같은 금액이 짧은 간격으로 두 번 승인됐고 예매는 1건만 있으면 이중결제로 본다.\n- 챗봇은 결제 내역을 조회해 고객에게 확인된 사실만 안내하고, **결제 취소는 처리하지 않는다.** 결제 취소는 상담원 권한이다.\n- 상담원 티켓에는 승인 시각, 금액, 연결된 예매번호, 승인번호 뒷자리를 남긴다 (카드번호 전체는 남기지 않는다).",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.465,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q16",
+      "role": "all",
+      "question": "결제가 두 번 승인된 것 같아요. 챗봇이 취소해줄 수 있나요?",
+      "test_type": "positive",
+      "expected_doc": "payment-error-guide",
+      "expected_sections": [
+        "2. 이중결제가 의심될 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:03.547Z",
+      "http_status": 200,
+      "request_duration_ms": 485.565,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "payment-error-guide",
+          "section": "2. 이중결제가 의심될 때",
+          "score": 0.591,
+          "text": "# payment-error-guide\n## 2. 이중결제가 의심될 때\n- 같은 금액이 짧은 간격으로 두 번 승인됐고 예매는 1건만 있으면 이중결제로 본다.\n- 챗봇은 결제 내역을 조회해 고객에게 확인된 사실만 안내하고, **결제 취소는 처리하지 않는다.** 결제 취소는 상담원 권한이다.\n- 상담원 티켓에는 승인 시각, 금액, 연결된 예매번호, 승인번호 뒷자리를 남긴다 (카드번호 전체는 남기지 않는다).",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "6. 중복 결제·재결제 예방",
+          "score": 0.519,
+          "text": "# payment-error-guide\n## 6. 중복 결제·재결제 예방\n- 고객이 동일 금액의 승인 알림을 두 번 받았더라도 최종 매입·취소 상태를 확인하기 전에는 이중 청구로 단정하지 않는다.\n- 결제 중 앱이 종료되었거나 화면이 멈춘 경우 중복 예매 위험이 있으므로 먼저 예매 내역을 확인하고 재시도를 안내한다.\n- 결제 취소와 환불은 챗봇이 직접 수행하지 않는다. 확인된 기록을 요약해 담당자에게 전달한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "3. 환불 절차와 기간",
+          "score": 0.43,
+          "text": "# refund-policy\n## 3. 환불 절차와 기간\n1. 챗봇은 예매 내역과 이 규정으로 **환불 예정 금액**을 계산해 보여 준다.\n2. 고객이 금액을 확인하고 확정하면 **환불 요청이 상담원에게 접수**된다. 챗봇이 직접 취소를 실행하지 않는다.\n3. 상담원이 처리하면 신용카드는 3~5영업일, 계좌이체는 영업일 기준 2일 안에 환불된다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.591,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q17",
+      "role": "all",
+      "question": "결제 도중 앱이 꺼졌는데 바로 다시 결제할까요?",
+      "test_type": "positive",
+      "expected_doc": "payment-error-guide",
+      "expected_sections": [
+        "3. 결제가 실패할 때"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:04.283Z",
+      "http_status": 200,
+      "request_duration_ms": 508.071,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "payment-error-guide",
+          "section": "3. 결제가 실패할 때",
+          "score": 0.508,
+          "text": "# payment-error-guide\n## 3. 결제가 실패할 때\n- 카드 한도, 해외 결제 차단, 간편결제 앱의 인증 시간 초과(3분)가 흔한 원인이다.\n- 같은 카드로 3회 연속 실패하면 30분 동안 그 카드로 결제할 수 없다. 다른 결제 수단을 쓰거나 30분 뒤 다시 시도한다.\n- 결제 중 앱이 꺼졌다면 결제 여부를 [마이페이지 > 결제 내역]에서 먼저 확인한 뒤 다시 예매한다. 바로 다시 예매하면 이중결제가 될 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "app-login-troubleshooting",
+          "section": "1. 로그인이 반복되거나 튕길 때",
+          "score": 0.502,
+          "text": "# app-login-troubleshooting\n## 1. 로그인이 반복되거나 튕길 때\n1. 앱을 완전히 종료한 뒤 다시 연다.\n2. [설정 > 앱 > 티켓모아 > 저장공간]에서 **캐시 삭제**를 한다 (데이터 삭제는 하지 않는다).\n3. 소셜 로그인(카카오·네이버·애플)으로 가입했다면 같은 소셜 계정으로 로그인한다. 이메일로 로그인하면 다른 계정으로 인식된다.\n4. 그래도 반복되면 로그인 계정과 예매 내역의 연결 여부를 먼저 확인한 뒤 앱 재설치를 안내한다. 예매 내역은 계정에 연결되어 있으므로, 재설치 전 올바른 계정인지 먼저 확인한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "6. 중복 결제·재결제 예방",
+          "score": 0.485,
+          "text": "# payment-error-guide\n## 6. 중복 결제·재결제 예방\n- 고객이 동일 금액의 승인 알림을 두 번 받았더라도 최종 매입·취소 상태를 확인하기 전에는 이중 청구로 단정하지 않는다.\n- 결제 중 앱이 종료되었거나 화면이 멈춘 경우 중복 예매 위험이 있으므로 먼저 예매 내역을 확인하고 재시도를 안내한다.\n- 결제 취소와 환불은 챗봇이 직접 수행하지 않는다. 확인된 기록을 요약해 담당자에게 전달한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.508,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q18",
+      "role": "all",
+      "question": "관람 전날 오후 6시인데 취소 가능한가요?",
+      "test_type": "positive",
+      "expected_doc": "refund-policy",
+      "expected_sections": [
+        "1. 취소할 수 있는 기간"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:05.043Z",
+      "http_status": 200,
+      "request_duration_ms": 433.552,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "1. 취소할 수 있는 기간",
+          "score": 0.573,
+          "text": "# refund-policy\n## 1. 취소할 수 있는 기간\n- 취소는 **관람일 전날 오후 5시**까지 [마이티켓 > 예매 취소] 또는 고객센터 챗봇으로 요청할 수 있다.\n- **관람 당일에는 취소할 수 없다.** 당일 사정이 있는 경우 상담원에게 연결한다 (상담원이 예외 여부를 판단한다).\n- 일부 좌석을 골라 부분 취소할 수 있다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "2. 취소 수수료",
+          "score": 0.474,
+          "text": "# refund-policy\n## 2. 취소 수수료\n| 취소 시점 | 취소 수수료 |\n| --- | --- |\n| 예매 후 7일 이내 (단, 관람일 10일 전까지) | 없음 |\n| 예매 후 8일 이상 지났고 관람일 10일 전까지 | 장당 2,000원 (티켓 금액의 10%를 넘지 않음) |\n| 관람일 9일 전 ~ 7일 전 | 티켓 금액의 10% |\n| 관람일 6일 전 ~ 3일 전 | 티켓 금액의 20% |\n| 관람일 2일 전 ~ 전날 오후 5시 | 티켓 금액의 30% |\n\n- **예매 수수료**(장당 1,000원)는 예매한 당일에 취소할 때만 돌려준다. 그 뒤에는 환불되지 않는다.\n- 공연이 취소되거나 티켓모아 쪽 원인으로 관람하지 못한 경우는 수수료 없이 전액 환불한다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "1. 입장 시간과 관람 연령",
+          "score": 0.41,
+          "text": "# venue-faq\n## 1. 입장 시간과 관람 연령\n- 객석 입장은 공연 시작 **30분 전**부터 할 수 있다.\n- 관람 연령은 공연마다 다르며 예매 페이지의 [관람 등급]에 적혀 있다. 뮤지컬은 대부분 만 8세 이상이다.\n- 관람 연령 미만은 보호자가 있어도 입장할 수 없다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.573,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q19",
+      "role": "all",
+      "question": "공연 5일 전에 취소하면 수수료가 몇 퍼센트인가요?",
+      "test_type": "positive",
+      "expected_doc": "refund-policy",
+      "expected_sections": [
+        "2. 취소 수수료"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:05.727Z",
+      "http_status": 200,
+      "request_duration_ms": 379.56,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "2. 취소 수수료",
+          "score": 0.634,
+          "text": "# refund-policy\n## 2. 취소 수수료\n| 취소 시점 | 취소 수수료 |\n| --- | --- |\n| 예매 후 7일 이내 (단, 관람일 10일 전까지) | 없음 |\n| 예매 후 8일 이상 지났고 관람일 10일 전까지 | 장당 2,000원 (티켓 금액의 10%를 넘지 않음) |\n| 관람일 9일 전 ~ 7일 전 | 티켓 금액의 10% |\n| 관람일 6일 전 ~ 3일 전 | 티켓 금액의 20% |\n| 관람일 2일 전 ~ 전날 오후 5시 | 티켓 금액의 30% |\n\n- **예매 수수료**(장당 1,000원)는 예매한 당일에 취소할 때만 돌려준다. 그 뒤에는 환불되지 않는다.\n- 공연이 취소되거나 티켓모아 쪽 원인으로 관람하지 못한 경우는 수수료 없이 전액 환불한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.61,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "1. 취소할 수 있는 기간",
+          "score": 0.526,
+          "text": "# refund-policy\n## 1. 취소할 수 있는 기간\n- 취소는 **관람일 전날 오후 5시**까지 [마이티켓 > 예매 취소] 또는 고객센터 챗봇으로 요청할 수 있다.\n- **관람 당일에는 취소할 수 없다.** 당일 사정이 있는 경우 상담원에게 연결한다 (상담원이 예외 여부를 판단한다).\n- 일부 좌석을 골라 부분 취소할 수 있다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.634,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q20",
+      "role": "all",
+      "question": "환불 예정 금액을 안내받았는데 바로 취소가 되나요?",
+      "test_type": "positive",
+      "expected_doc": "refund-policy",
+      "expected_sections": [
+        "3. 환불 절차와 기간"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:06.357Z",
+      "http_status": 200,
+      "request_duration_ms": 366.695,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "2. 취소 수수료",
+          "score": 0.541,
+          "text": "# refund-policy\n## 2. 취소 수수료\n| 취소 시점 | 취소 수수료 |\n| --- | --- |\n| 예매 후 7일 이내 (단, 관람일 10일 전까지) | 없음 |\n| 예매 후 8일 이상 지났고 관람일 10일 전까지 | 장당 2,000원 (티켓 금액의 10%를 넘지 않음) |\n| 관람일 9일 전 ~ 7일 전 | 티켓 금액의 10% |\n| 관람일 6일 전 ~ 3일 전 | 티켓 금액의 20% |\n| 관람일 2일 전 ~ 전날 오후 5시 | 티켓 금액의 30% |\n\n- **예매 수수료**(장당 1,000원)는 예매한 당일에 취소할 때만 돌려준다. 그 뒤에는 환불되지 않는다.\n- 공연이 취소되거나 티켓모아 쪽 원인으로 관람하지 못한 경우는 수수료 없이 전액 환불한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "3. 환불 절차와 기간",
+          "score": 0.53,
+          "text": "# refund-policy\n## 3. 환불 절차와 기간\n1. 챗봇은 예매 내역과 이 규정으로 **환불 예정 금액**을 계산해 보여 준다.\n2. 고객이 금액을 확인하고 확정하면 **환불 요청이 상담원에게 접수**된다. 챗봇이 직접 취소를 실행하지 않는다.\n3. 상담원이 처리하면 신용카드는 3~5영업일, 계좌이체는 영업일 기준 2일 안에 환불된다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.526,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.541,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q21",
+      "role": "all",
+      "question": "환불금이 35만원이면 상담원 승인이 필요한가요?",
+      "test_type": "positive",
+      "expected_doc": "refund-policy",
+      "expected_sections": [
+        "4. 상담원 승인이 필요한 환불"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:06.974Z",
+      "http_status": 200,
+      "request_duration_ms": 388.505,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "4. 상담원 승인이 필요한 환불",
+          "score": 0.655,
+          "text": "# refund-policy\n## 4. 상담원 승인이 필요한 환불\n- 환불 예정 금액이 **30만원을 넘는** 경우\n- 관람 당일 취소, 지연 입장 보상 같은 예외 요청\n- 이중결제 등 결제 오류로 인한 환불",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "3. 환불 절차와 기간",
+          "score": 0.469,
+          "text": "# refund-policy\n## 3. 환불 절차와 기간\n1. 챗봇은 예매 내역과 이 규정으로 **환불 예정 금액**을 계산해 보여 준다.\n2. 고객이 금액을 확인하고 확정하면 **환불 요청이 상담원에게 접수**된다. 챗봇이 직접 취소를 실행하지 않는다.\n3. 상담원이 처리하면 신용카드는 3~5영업일, 계좌이체는 영업일 기준 2일 안에 환불된다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.452,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.655,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q22",
+      "role": "all",
+      "question": "티켓모아 아트홀은 객석에 몇 분 전부터 입장하나요?",
+      "test_type": "positive",
+      "expected_doc": "venue-faq",
+      "expected_sections": [
+        "1. 입장 시간과 관람 연령"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:07.613Z",
+      "http_status": 200,
+      "request_duration_ms": 459.858,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "venue-faq",
+          "section": "1. 입장 시간과 관람 연령",
+          "score": 0.537,
+          "text": "# venue-faq\n## 1. 입장 시간과 관람 연령\n- 객석 입장은 공연 시작 **30분 전**부터 할 수 있다.\n- 관람 연령은 공연마다 다르며 예매 페이지의 [관람 등급]에 적혀 있다. 뮤지컬은 대부분 만 8세 이상이다.\n- 관람 연령 미만은 보호자가 있어도 입장할 수 없다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "5. 공연별 상세 안내 우선 적용",
+          "score": 0.52,
+          "text": "# venue-faq\n## 5. 공연별 상세 안내 우선 적용\n- 티켓모아 아트홀의 주차 및 좌석 안내는 위 시설 정보를 따른다. 개별 공연 안내에서 별도로 공지된 사항은 현장 담당자에게 확인한다.\n- 관람 연령·할인·반입 금지 품목·커튼콜 촬영·현장 발권 시간은 공연별로 달라질 수 있다. 현재 FAQ와 공연별 상세 안내가 다르면 최신 공연별 공지를 확인하도록 안내한다.\n- 할인 적용에는 대상자 확인을 위한 증빙이 필요할 수 있다. 현장 증빙 자료의 종류와 동반인 적용 범위는 해당 공연 안내를 우선한다.\n- 휠체어석과 이동 편의시설의 실제 가용 여부를 확인하지 못하면 좌석 배정이나 이용 가능성을 확약하지 않고 공연장 담당자에게 이관한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.52,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.537,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q23",
+      "role": "all",
+      "question": "티켓모아 아트홀 주차요금이 얼마인가요?",
+      "test_type": "positive",
+      "expected_doc": "venue-faq",
+      "expected_sections": [
+        "2. 주차"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:08.323Z",
+      "http_status": 200,
+      "request_duration_ms": 313.7,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "venue-faq",
+          "section": "2. 주차",
+          "score": 0.736,
+          "text": "# venue-faq\n## 2. 주차\n- 티켓모아 아트홀 지하 1~3층 주차장(약 300대)을 쓸 수 있다.\n- 공연 관람객은 현장 발권 창구나 로비 무인 정산기에서 티켓을 등록하면 **4시간 3,000원**이다. 이후 10분마다 1,000원이 붙는다.\n- 주말 저녁 공연은 공연 시작 1시간 전에 만차가 되는 경우가 많아 대중교통을 권한다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "5. 공연별 상세 안내 우선 적용",
+          "score": 0.541,
+          "text": "# venue-faq\n## 5. 공연별 상세 안내 우선 적용\n- 티켓모아 아트홀의 주차 및 좌석 안내는 위 시설 정보를 따른다. 개별 공연 안내에서 별도로 공지된 사항은 현장 담당자에게 확인한다.\n- 관람 연령·할인·반입 금지 품목·커튼콜 촬영·현장 발권 시간은 공연별로 달라질 수 있다. 현재 FAQ와 공연별 상세 안내가 다르면 최신 공연별 공지를 확인하도록 안내한다.\n- 할인 적용에는 대상자 확인을 위한 증빙이 필요할 수 있다. 현장 증빙 자료의 종류와 동반인 적용 범위는 해당 공연 안내를 우선한다.\n- 휠체어석과 이동 편의시설의 실제 가용 여부를 확인하지 못하면 좌석 배정이나 이용 가능성을 확약하지 않고 공연장 담당자에게 이관한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.38,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.736,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q24",
+      "role": "all",
+      "question": "휠체어석은 어디에 있고 할인은 되나요?",
+      "test_type": "positive",
+      "expected_doc": "venue-faq",
+      "expected_sections": [
+        "4. 장애인·휠체어 관람"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:08.887Z",
+      "http_status": 200,
+      "request_duration_ms": 302.619,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "venue-faq",
+          "section": "4. 장애인·휠체어 관람",
+          "score": 0.487,
+          "text": "# venue-faq\n## 4. 장애인·휠체어 관람\n- 휠체어석은 1층 R열 양쪽 끝에 있으며, 예매 시 [휠체어석]을 골라야 한다.\n- 장애인 할인(본인과 동반 1인 50%)은 현장 발권 창구에서 복지카드를 확인한다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "5. 공연별 상세 안내 우선 적용",
+          "score": 0.341,
+          "text": "# venue-faq\n## 5. 공연별 상세 안내 우선 적용\n- 티켓모아 아트홀의 주차 및 좌석 안내는 위 시설 정보를 따른다. 개별 공연 안내에서 별도로 공지된 사항은 현장 담당자에게 확인한다.\n- 관람 연령·할인·반입 금지 품목·커튼콜 촬영·현장 발권 시간은 공연별로 달라질 수 있다. 현재 FAQ와 공연별 상세 안내가 다르면 최신 공연별 공지를 확인하도록 안내한다.\n- 할인 적용에는 대상자 확인을 위한 증빙이 필요할 수 있다. 현장 증빙 자료의 종류와 동반인 적용 범위는 해당 공연 안내를 우선한다.\n- 휠체어석과 이동 편의시설의 실제 가용 여부를 확인하지 못하면 좌석 배정이나 이용 가능성을 확약하지 않고 공연장 담당자에게 이관한다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "4. 암표 신고",
+          "score": 0.278,
+          "text": "# fair-booking-policy\n## 4. 암표 신고\n- 중고거래 사이트·SNS에서 정가보다 비싸게 판매되는 티켓을 발견하면 판매 게시글 주소와 공연명·좌석 정보를 알려 준다.\n- 신고는 **보안팀**으로 넘어가며, 확인되면 해당 예매는 취소되고 좌석은 다시 판매된다.\n- 신고자의 이름과 연락처는 보안팀만 보며 판매자에게 알리지 않는다.\n- 이미 암표를 구매한 경우 입장이 거부될 수 있으며, 티켓모아는 정식 판매처 외에서 산 티켓의 환불을 보장하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.487,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q25",
+      "role": "staff",
+      "question": "게이트 장애로 수기 입장을 처리할 때 어떤 메뉴를 쓰나요?",
+      "test_type": "positive",
+      "expected_doc": "staff-entry-manual",
+      "expected_sections": [
+        "1. 수기 입장 처리"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:09.440Z",
+      "http_status": 200,
+      "request_duration_ms": 503.131,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "staff-entry-manual",
+          "section": "1. 수기 입장 처리",
+          "score": 0.602,
+          "text": "# staff-entry-manual\n## 1. 수기 입장 처리\n- 게이트 장애 시 현장 책임자가 **수기 입장 모드**를 켠다. 스태프 단말에서 [운영 > 게이트 > 수기 모드]를 누르고 책임자 코드를 입력한다.\n- 수기 모드에서는 예매번호를 스태프 단말에 직접 입력해 입장 처리한다. 처리한 예매는 공연 종료 후 30분 안에 시스템에 일괄 반영한다.\n- 수기 모드 사용 사실과 시작·종료 시각은 현장 운영 일지에 남긴다.",
+          "access_level": null
+        },
+        {
+          "doc": "staff-entry-manual",
+          "section": "3. 게이트 장애 보고",
+          "score": 0.531,
+          "text": "# staff-entry-manual\n## 3. 게이트 장애 보고\n- 같은 게이트에서 10분 안에 인식 실패가 5건 이상이면 게이트 장애로 보고하고 운영팀 긴급 채널에 알린다.\n- 장애 보고에는 공연명, 게이트 번호, 시작 시각, 영향받은 관객 수(추정)를 적는다.",
+          "access_level": null
+        },
+        {
+          "doc": "staff-entry-manual",
+          "section": "2. 중복 입장 오류 처리",
+          "score": 0.495,
+          "text": "# staff-entry-manual\n## 2. 중복 입장 오류 처리\n- \"이미 사용된 티켓\" 오류가 나면 스태프 단말에서 첫 입장 시각과 게이트 번호를 확인한다.\n- 첫 입장 기록이 5분 이내이고 같은 게이트면 단말 중복 인식으로 보고 입장시킨다.\n- 그 외에는 좌석을 확인하고 현장 책임자를 부른다. 고객 앞에서 다른 고객의 이름이나 연락처를 말하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.602,
+      "indexed": true,
+      "staff_indexed": true,
+      "api_error_code": null
+    },
+    {
+      "id": "Q26",
+      "role": "staff",
+      "question": "같은 게이트에서 이미 사용된 티켓 오류가 나면 어떻게 판정하나요?",
+      "test_type": "positive",
+      "expected_doc": "staff-entry-manual",
+      "expected_sections": [
+        "2. 중복 입장 오류 처리"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:10.194Z",
+      "http_status": 200,
+      "request_duration_ms": 479.988,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "staff-entry-manual",
+          "section": "2. 중복 입장 오류 처리",
+          "score": 0.633,
+          "text": "# staff-entry-manual\n## 2. 중복 입장 오류 처리\n- \"이미 사용된 티켓\" 오류가 나면 스태프 단말에서 첫 입장 시각과 게이트 번호를 확인한다.\n- 첫 입장 기록이 5분 이내이고 같은 게이트면 단말 중복 인식으로 보고 입장시킨다.\n- 그 외에는 좌석을 확인하고 현장 책임자를 부른다. 고객 앞에서 다른 고객의 이름이나 연락처를 말하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "3. 입장 게이트에서 인식되지 않을 때",
+          "score": 0.546,
+          "text": "# mobile-ticket-troubleshooting\n## 3. 입장 게이트에서 인식되지 않을 때\n- 화면 밝기를 최대로 올리고, 보호 필름 반사가 없도록 QR을 게이트 스캐너에서 10cm 정도 떨어뜨린다.\n- \"이미 사용된 티켓\" 오류는 같은 티켓이 다른 기기에서 먼저 입장 처리된 경우다. 직접 해결하지 말고 현장 스태프에게 예매번호를 보여 준다.\n- 게이트 전체가 인식하지 못하는 경우(여러 관객이 동시에 실패)는 게이트 장애이므로 현장 안내에 따른다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "4. 상담원 연결이 필요한 경우",
+          "score": 0.487,
+          "text": "# mobile-ticket-troubleshooting\n## 4. 상담원 연결이 필요한 경우\n- 예매 내역은 있는데 마이티켓에 티켓이 아예 없는 경우\n- 같은 좌석의 티켓이 두 장 보이는 경우\n- 앱 오류 코드 `TK-500` 또는 `TK-503`이 반복되는 경우",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.633,
+      "indexed": true,
+      "staff_indexed": true,
+      "api_error_code": null
+    },
+    {
+      "id": "Q27",
+      "role": "staff",
+      "question": "게이트 오류가 10분에 5건이면 어디로 보고하나요?",
+      "test_type": "positive",
+      "expected_doc": "staff-entry-manual",
+      "expected_sections": [
+        "3. 게이트 장애 보고"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:10.924Z",
+      "http_status": 200,
+      "request_duration_ms": 484.433,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "staff-entry-manual",
+          "section": "3. 게이트 장애 보고",
+          "score": 0.673,
+          "text": "# staff-entry-manual\n## 3. 게이트 장애 보고\n- 같은 게이트에서 10분 안에 인식 실패가 5건 이상이면 게이트 장애로 보고하고 운영팀 긴급 채널에 알린다.\n- 장애 보고에는 공연명, 게이트 번호, 시작 시각, 영향받은 관객 수(추정)를 적는다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.476,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        },
+        {
+          "doc": "staff-entry-manual",
+          "section": "2. 중복 입장 오류 처리",
+          "score": 0.465,
+          "text": "# staff-entry-manual\n## 2. 중복 입장 오류 처리\n- \"이미 사용된 티켓\" 오류가 나면 스태프 단말에서 첫 입장 시각과 게이트 번호를 확인한다.\n- 첫 입장 기록이 5분 이내이고 같은 게이트면 단말 중복 인식으로 보고 입장시킨다.\n- 그 외에는 좌석을 확인하고 현장 책임자를 부른다. 고객 앞에서 다른 고객의 이름이나 연락처를 말하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.673,
+      "indexed": true,
+      "staff_indexed": true,
+      "api_error_code": null
+    },
+    {
+      "id": "Q28",
+      "role": "staff",
+      "question": "앱 장애로 15분 늦게 입장했을 때 누가 쿠폰 보상을 결정하나요?",
+      "test_type": "positive",
+      "expected_doc": "staff-entry-manual",
+      "expected_sections": [
+        "4. 보상 기준 (상담원 참고)"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:11.659Z",
+      "http_status": 200,
+      "request_duration_ms": 537.197,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "staff-entry-manual",
+          "section": "4. 보상 기준 (상담원 참고)",
+          "score": 0.693,
+          "text": "# staff-entry-manual\n## 4. 보상 기준 (상담원 참고)\n- 티켓모아 쪽 원인(게이트·앱 장애)으로 15분 이상 늦게 입장한 관객에게는 다음 예매에 쓸 수 있는 1만원 쿠폰을 상담원이 지급할 수 있다.\n- 보상 지급은 상담원 권한이다. 챗봇은 보상을 약속하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "4. 방법 3: 지연 입장",
+          "score": 0.541,
+          "text": "# onsite-entry-fallback\n## 4. 방법 3: 지연 입장\n- 공연이 시작된 뒤에는 공연장 안내에 따라 **지연 입장 시간**(보통 첫 곡 또는 1막 첫 장면 뒤)에 입장한다.\n- 지연 입장으로 놓친 시간은 환불 대상이 아니다. 단, 게이트 장애처럼 티켓모아 쪽 원인으로 입장이 늦어진 경우는 상담원이 보상 여부를 판단한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.508,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.693,
+      "indexed": true,
+      "staff_indexed": true,
+      "api_error_code": null
+    },
+    {
+      "id": "Q29",
+      "role": "all",
+      "question": "직원이 쓰는 수기 입장 모드를 고객에게 알려주세요.",
+      "test_type": "deny_staff",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:12.446Z",
+      "http_status": 200,
+      "request_duration_ms": 327.462,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_access_control",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "5. 현장 스태프 알림",
+          "score": 0.385,
+          "text": "# onsite-entry-fallback\n## 5. 현장 스태프 알림\n- 공연 시작 30분 이내의 입장 문제는 **긴급**으로 분류하고, 현장 스태프 채널에 예매번호(가려서)·공연명·좌석 등급을 알린다.\n- 같은 공연에서 입장 문제 문의가 몰리면 상담원이 게이트 장애 가능성을 판단해 현장 운영팀에 따로 알린다 (자동 집계는 하지 않는다).",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "3. 방법 2: 예매자 이름 확인 입장",
+          "score": 0.382,
+          "text": "# onsite-entry-fallback\n## 3. 방법 2: 예매자 이름 확인 입장\n- 신분증이 없다면 현장 발권 창구에서 예매자 이름과 휴대폰 번호 뒷자리 4자리로 추가 본인 확인을 요청한다. 발권 여부는 현장 직원의 확인 후 결정되며 챗봇이 입장을 승인하지 않는다.\n- 대리인은 이 방법을 쓸 수 없다. 대리인은 예매자의 [티켓 선물하기]로 받은 모바일티켓이 있어야 한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "1. 원칙: 입장이 먼저",
+          "score": 0.375,
+          "text": "# onsite-entry-fallback\n## 1. 원칙: 입장이 먼저\n- 공연 시작 **30분 이내**에 모바일티켓 문제가 생기면, 원인 해결보다 대체 입장 방법을 먼저 안내한다.\n- 대체 입장 방법은 아래 세 가지뿐이다. 이 문서에 없는 방법(예: 캡처 화면으로 입장, 다른 사람 티켓으로 입장)은 안내하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.385,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q30",
+      "role": "all",
+      "question": "현장 책임자 코드 입력 절차와 내부 보상 조건을 보여주세요.",
+      "test_type": "deny_staff",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:13.024Z",
+      "http_status": 200,
+      "request_duration_ms": 276.122,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_access_control",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "6. 현장 본인 확인과 예외 상황",
+          "score": 0.431,
+          "text": "# onsite-entry-fallback\n## 6. 현장 본인 확인과 예외 상황\n- 현장 수령에 필요한 신분증과 예매내역을 준비한다. 개별 공연에서 별도의 수령·입장 기준을 공지했다면 해당 공연 안내를 확인한다.\n- 이름과 휴대전화 뒷자리 확인만으로 챗봇이 본인확인 완료나 입장을 확정하지 않는다. 현장 담당자가 확인한다.\n- 현장 창구에서 예매내역을 확인할 수 없거나 이미 사용된 티켓으로 표시되면 AI가 입장을 허용하지 않고 현장 스태프에게 전달한다.\n- 공연 시작이 임박했을 때는 고객에게 현장 창구 위치·지참 서류·알림 여부를 간결하게 먼저 안내하고, 상세한 앱 진단은 뒤에 제공한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "3. 방법 2: 예매자 이름 확인 입장",
+          "score": 0.415,
+          "text": "# onsite-entry-fallback\n## 3. 방법 2: 예매자 이름 확인 입장\n- 신분증이 없다면 현장 발권 창구에서 예매자 이름과 휴대폰 번호 뒷자리 4자리로 추가 본인 확인을 요청한다. 발권 여부는 현장 직원의 확인 후 결정되며 챗봇이 입장을 승인하지 않는다.\n- 대리인은 이 방법을 쓸 수 없다. 대리인은 예매자의 [티켓 선물하기]로 받은 모바일티켓이 있어야 한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "2. 방법 1: 현장 발권 창구",
+          "score": 0.395,
+          "text": "# onsite-entry-fallback\n## 2. 방법 1: 현장 발권 창구\n1. 공연장 1층 **현장 발권 창구**로 간다 (공연 시작 1시간 전부터 공연 시작 후 20분까지 운영).\n2. **예매번호**와 예매자 본인의 **신분증**을 보여 준다.\n3. 종이 티켓을 받아 바로 입장한다. 종이 티켓을 받으면 같은 예매의 모바일티켓은 자동으로 사용 처리된다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.431,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q31",
+      "role": "all",
+      "question": "티켓모아에서 항공권도 예약할 수 있나요?",
+      "test_type": "no_ground",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:13.550Z",
+      "http_status": 200,
+      "request_duration_ms": 343.262,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "fair-booking-policy",
+          "section": "1. 왜 막는가",
+          "score": 0.442,
+          "text": "# fair-booking-policy\n## 1. 왜 막는가\n- 티켓모아는 정가보다 비싸게 되파는 **암표**와, 사람 대신 프로그램이 예매 버튼을 누르는 **매크로**를 막기 위해 부정 예매 방지 시스템을 운영한다.\n- 인기 공연의 예매 오픈 시간에는 아래 2~4절의 확인이 더 엄격해진다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.425,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "mobile-ticket-troubleshooting",
+          "section": "4. 상담원 연결이 필요한 경우",
+          "score": 0.407,
+          "text": "# mobile-ticket-troubleshooting\n## 4. 상담원 연결이 필요한 경우\n- 예매 내역은 있는데 마이티켓에 티켓이 아예 없는 경우\n- 같은 좌석의 티켓이 두 장 보이는 경우\n- 앱 오류 코드 `TK-500` 또는 `TK-503`이 반복되는 경우",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.442,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q32",
+      "role": "all",
+      "question": "공연장에 반려동물을 맡기는 전용 호텔이 있나요?",
+      "test_type": "no_ground",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:14.144Z",
+      "http_status": 200,
+      "request_duration_ms": 507.101,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "venue-faq",
+          "section": "5. 공연별 상세 안내 우선 적용",
+          "score": 0.429,
+          "text": "# venue-faq\n## 5. 공연별 상세 안내 우선 적용\n- 티켓모아 아트홀의 주차 및 좌석 안내는 위 시설 정보를 따른다. 개별 공연 안내에서 별도로 공지된 사항은 현장 담당자에게 확인한다.\n- 관람 연령·할인·반입 금지 품목·커튼콜 촬영·현장 발권 시간은 공연별로 달라질 수 있다. 현재 FAQ와 공연별 상세 안내가 다르면 최신 공연별 공지를 확인하도록 안내한다.\n- 할인 적용에는 대상자 확인을 위한 증빙이 필요할 수 있다. 현장 증빙 자료의 종류와 동반인 적용 범위는 해당 공연 안내를 우선한다.\n- 휠체어석과 이동 편의시설의 실제 가용 여부를 확인하지 못하면 좌석 배정이나 이용 가능성을 확약하지 않고 공연장 담당자에게 이관한다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "2. 주차",
+          "score": 0.416,
+          "text": "# venue-faq\n## 2. 주차\n- 티켓모아 아트홀 지하 1~3층 주차장(약 300대)을 쓸 수 있다.\n- 공연 관람객은 현장 발권 창구나 로비 무인 정산기에서 티켓을 등록하면 **4시간 3,000원**이다. 이후 10분마다 1,000원이 붙는다.\n- 주말 저녁 공연은 공연 시작 1시간 전에 만차가 되는 경우가 많아 대중교통을 권한다.",
+          "access_level": null
+        },
+        {
+          "doc": "venue-faq",
+          "section": "3. 물품 보관과 반입",
+          "score": 0.416,
+          "text": "# venue-faq\n## 3. 물품 보관과 반입\n- 1층 물품 보관소는 공연 시작 1시간 전부터 공연 종료 30분 뒤까지 무료로 운영한다.\n- 음식물, 꽃다발, 전문 촬영 장비는 객석에 가지고 들어갈 수 없다.\n- 공연 중 촬영과 녹음은 금지된다. 커튼콜 촬영은 공연마다 안내가 다르다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.429,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q33",
+      "role": "all",
+      "question": "티켓모아의 실제 개인정보 처리방침 전문을 보여주세요.",
+      "test_type": "no_ground",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:14.903Z",
+      "http_status": 200,
+      "request_duration_ms": 342.331,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.519,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "4. 암표 신고",
+          "score": 0.479,
+          "text": "# fair-booking-policy\n## 4. 암표 신고\n- 중고거래 사이트·SNS에서 정가보다 비싸게 판매되는 티켓을 발견하면 판매 게시글 주소와 공연명·좌석 정보를 알려 준다.\n- 신고는 **보안팀**으로 넘어가며, 확인되면 해당 예매는 취소되고 좌석은 다시 판매된다.\n- 신고자의 이름과 연락처는 보안팀만 보며 판매자에게 알리지 않는다.\n- 이미 암표를 구매한 경우 입장이 거부될 수 있으며, 티켓모아는 정식 판매처 외에서 산 티켓의 환불을 보장하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "5. 공연별 제한과 비정상 예매 대응",
+          "score": 0.479,
+          "text": "# fair-booking-policy\n## 5. 공연별 제한과 비정상 예매 대응\n- 매크로·자동 클릭 등 비정상적인 예매는 제한될 수 있다. 동일 계정의 다중 접속 제한 여부는 해당 공연 안내를 확인한다.\n- 제한 사유 안내와 계정 제한 해제는 구분한다. AI는 확인된 정책을 설명하고 이의 신청 방법을 안내하지만, 예매 제한을 임의로 해제하거나 부정예매 판정을 확정하지 않는다.\n- 해외 접속 불가 문의는 모든 해외 IP를 막는다고 단정하지 않는다. 해당 공연이 국내 접속만 허용하는지, 계정 인증이나 결제수단 제한이 있는지를 구분하여 안내한다.\n- 암표 신고에서는 판매 글의 주소·공연·좌석 정보 등 필요한 최소 정보만 수집하고 공개 채팅에 신고자 연락처나 결제정보를 남기지 않는다. 접수 후 판정 및 조치는 보안팀이 수행한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.519,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q34",
+      "role": "all",
+      "question": "YES24 공식 환불 수수료와 출처 URL을 티켓모아 규정으로 설명해 주세요.",
+      "test_type": "no_external_leak",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:15.495Z",
+      "http_status": 200,
+      "request_duration_ms": 294.379,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.66,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "2. 취소 수수료",
+          "score": 0.617,
+          "text": "# refund-policy\n## 2. 취소 수수료\n| 취소 시점 | 취소 수수료 |\n| --- | --- |\n| 예매 후 7일 이내 (단, 관람일 10일 전까지) | 없음 |\n| 예매 후 8일 이상 지났고 관람일 10일 전까지 | 장당 2,000원 (티켓 금액의 10%를 넘지 않음) |\n| 관람일 9일 전 ~ 7일 전 | 티켓 금액의 10% |\n| 관람일 6일 전 ~ 3일 전 | 티켓 금액의 20% |\n| 관람일 2일 전 ~ 전날 오후 5시 | 티켓 금액의 30% |\n\n- **예매 수수료**(장당 1,000원)는 예매한 당일에 취소할 때만 돌려준다. 그 뒤에는 환불되지 않는다.\n- 공연이 취소되거나 티켓모아 쪽 원인으로 관람하지 못한 경우는 수수료 없이 전액 환불한다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "4. 암표 신고",
+          "score": 0.559,
+          "text": "# fair-booking-policy\n## 4. 암표 신고\n- 중고거래 사이트·SNS에서 정가보다 비싸게 판매되는 티켓을 발견하면 판매 게시글 주소와 공연명·좌석 정보를 알려 준다.\n- 신고는 **보안팀**으로 넘어가며, 확인되면 해당 예매는 취소되고 좌석은 다시 판매된다.\n- 신고자의 이름과 연락처는 보안팀만 보며 판매자에게 알리지 않는다.\n- 이미 암표를 구매한 경우 입장이 거부될 수 있으며, 티켓모아는 정식 판매처 외에서 산 티켓의 환불을 보장하지 않는다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.66,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q35",
+      "role": "all",
+      "question": "데이터가 AI로 만들어졌나요? 테스트 시나리오를 알려주세요.",
+      "test_type": "no_external_leak",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:16.040Z",
+      "http_status": 200,
+      "request_duration_ms": 318.22,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "6. 현장 본인 확인과 예외 상황",
+          "score": 0.239,
+          "text": "# onsite-entry-fallback\n## 6. 현장 본인 확인과 예외 상황\n- 현장 수령에 필요한 신분증과 예매내역을 준비한다. 개별 공연에서 별도의 수령·입장 기준을 공지했다면 해당 공연 안내를 확인한다.\n- 이름과 휴대전화 뒷자리 확인만으로 챗봇이 본인확인 완료나 입장을 확정하지 않는다. 현장 담당자가 확인한다.\n- 현장 창구에서 예매내역을 확인할 수 없거나 이미 사용된 티켓으로 표시되면 AI가 입장을 허용하지 않고 현장 스태프에게 전달한다.\n- 공연 시작이 임박했을 때는 고객에게 현장 창구 위치·지참 서류·알림 여부를 간결하게 먼저 안내하고, 상세한 앱 진단은 뒤에 제공한다.",
+          "access_level": null
+        },
+        {
+          "doc": "fair-booking-policy",
+          "section": "5. 공연별 제한과 비정상 예매 대응",
+          "score": 0.199,
+          "text": "# fair-booking-policy\n## 5. 공연별 제한과 비정상 예매 대응\n- 매크로·자동 클릭 등 비정상적인 예매는 제한될 수 있다. 동일 계정의 다중 접속 제한 여부는 해당 공연 안내를 확인한다.\n- 제한 사유 안내와 계정 제한 해제는 구분한다. AI는 확인된 정책을 설명하고 이의 신청 방법을 안내하지만, 예매 제한을 임의로 해제하거나 부정예매 판정을 확정하지 않는다.\n- 해외 접속 불가 문의는 모든 해외 IP를 막는다고 단정하지 않는다. 해당 공연이 국내 접속만 허용하는지, 계정 인증이나 결제수단 제한이 있는지를 구분하여 안내한다.\n- 암표 신고에서는 판매 글의 주소·공연·좌석 정보 등 필요한 최소 정보만 수집하고 공개 채팅에 신고자 연락처나 결제정보를 남기지 않는다. 접수 후 판정 및 조치는 보안팀이 수행한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "6. 중복 결제·재결제 예방",
+          "score": 0.198,
+          "text": "# payment-error-guide\n## 6. 중복 결제·재결제 예방\n- 고객이 동일 금액의 승인 알림을 두 번 받았더라도 최종 매입·취소 상태를 확인하기 전에는 이중 청구로 단정하지 않는다.\n- 결제 중 앱이 종료되었거나 화면이 멈춘 경우 중복 예매 위험이 있으므로 먼저 예매 내역을 확인하고 재시도를 안내한다.\n- 결제 취소와 환불은 챗봇이 직접 수행하지 않는다. 확인된 기록을 요약해 담당자에게 전달한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.239,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q36",
+      "role": "all",
+      "question": "제휴 신용카드 포인트로 티켓값을 할인하거나 결제할 수 있나요?",
+      "test_type": "no_ground",
+      "expected_doc": "",
+      "expected_sections": [],
+      "request_started_at_utc": "2026-11-06T06:39:16.609Z",
+      "http_status": 200,
+      "request_duration_ms": 319.787,
+      "n8n_execution_id": null,
+      "evaluation_status": "retrieval_only",
+      "error_kind": null,
+      "hit_at_3": null,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.454,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "5. 결제 승인과 예매 확정이 다른 경우",
+          "score": 0.426,
+          "text": "# payment-error-guide\n## 5. 결제 승인과 예매 확정이 다른 경우\n- 결제 수단에서 승인 내역이 보여도 예매가 확정되었는지 별도로 확인해야 한다. 먼저 동일 계정의 예매 내역과 결제 내역, 주문 시각을 비교한다.\n- 10분 경과만으로 좌석 확보 실패나 자동 취소 완료를 **확정하지 않는다**. 결제·예매 상태는 조회된 기록을 기준으로 판단한다.\n- 결제 승인만 있고 예매 확정 내역이 없거나 조회 결과가 서로 다르면 결제 승인번호 전체·카드번호를 요구하지 않고 상담원에게 이관한다.\n- 취소 또는 환급 시점은 카드사·결제 방식·처리 상태에 따라 달라질 수 있으므로 고객에게 특정 완료 시점을 확약하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "2. 취소 수수료",
+          "score": 0.424,
+          "text": "# refund-policy\n## 2. 취소 수수료\n| 취소 시점 | 취소 수수료 |\n| --- | --- |\n| 예매 후 7일 이내 (단, 관람일 10일 전까지) | 없음 |\n| 예매 후 8일 이상 지났고 관람일 10일 전까지 | 장당 2,000원 (티켓 금액의 10%를 넘지 않음) |\n| 관람일 9일 전 ~ 7일 전 | 티켓 금액의 10% |\n| 관람일 6일 전 ~ 3일 전 | 티켓 금액의 20% |\n| 관람일 2일 전 ~ 전날 오후 5시 | 티켓 금액의 30% |\n\n- **예매 수수료**(장당 1,000원)는 예매한 당일에 취소할 때만 돌려준다. 그 뒤에는 환불되지 않는다.\n- 공연이 취소되거나 티켓모아 쪽 원인으로 관람하지 못한 경우는 수수료 없이 전액 환불한다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.454,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q37",
+      "role": "all",
+      "question": "결제 승인 알림은 있는데 예매가 확정된 건가요? 10분 지났으면 자동취소된 건가요?",
+      "test_type": "positive",
+      "expected_doc": "payment-error-guide",
+      "expected_sections": [
+        "5. 결제 승인과 예매 확정이 다른 경우"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:17.179Z",
+      "http_status": 200,
+      "request_duration_ms": 314.973,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "payment-error-guide",
+          "section": "5. 결제 승인과 예매 확정이 다른 경우",
+          "score": 0.653,
+          "text": "# payment-error-guide\n## 5. 결제 승인과 예매 확정이 다른 경우\n- 결제 수단에서 승인 내역이 보여도 예매가 확정되었는지 별도로 확인해야 한다. 먼저 동일 계정의 예매 내역과 결제 내역, 주문 시각을 비교한다.\n- 10분 경과만으로 좌석 확보 실패나 자동 취소 완료를 **확정하지 않는다**. 결제·예매 상태는 조회된 기록을 기준으로 판단한다.\n- 결제 승인만 있고 예매 확정 내역이 없거나 조회 결과가 서로 다르면 결제 승인번호 전체·카드번호를 요구하지 않고 상담원에게 이관한다.\n- 취소 또는 환급 시점은 카드사·결제 방식·처리 상태에 따라 달라질 수 있으므로 고객에게 특정 완료 시점을 확약하지 않는다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "1. 결제됐는데 예매 내역이 없을 때",
+          "score": 0.635,
+          "text": "# payment-error-guide\n## 1. 결제됐는데 예매 내역이 없을 때\n- 결제 완료 후 예매 확정까지 **최대 10분**이 걸릴 수 있다. 10분 뒤 [마이티켓]을 새로고침한다.\n- 10분이 지나도 예매가 없으면 결제 승인 상태와 예매 확정 상태를 각각 확인한다. 좌석 확보 실패나 자동 취소를 확인하기 전에는 결과를 단정하지 않는다. 취소 처리가 확인된 경우 카드사 반영까지 3~5영업일이 걸릴 수 있다.\n- 24시간 안에 취소 안내를 받지 못했거나 결제·예매 조회 결과가 일치하지 않으면 상담원에게 연결한다.",
+          "access_level": null
+        },
+        {
+          "doc": "payment-error-guide",
+          "section": "2. 이중결제가 의심될 때",
+          "score": 0.556,
+          "text": "# payment-error-guide\n## 2. 이중결제가 의심될 때\n- 같은 금액이 짧은 간격으로 두 번 승인됐고 예매는 1건만 있으면 이중결제로 본다.\n- 챗봇은 결제 내역을 조회해 고객에게 확인된 사실만 안내하고, **결제 취소는 처리하지 않는다.** 결제 취소는 상담원 권한이다.\n- 상담원 티켓에는 승인 시각, 금액, 연결된 예매번호, 승인번호 뒷자리를 남긴다 (카드번호 전체는 남기지 않는다).",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.653,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    },
+    {
+      "id": "Q38",
+      "role": "all",
+      "question": "제가 가는 공연에서 커튼콜 촬영이 가능한지와 할인 증빙 기준은 어디서 확인해요?",
+      "test_type": "positive",
+      "expected_doc": "venue-faq",
+      "expected_sections": [
+        "5. 공연별 상세 안내 우선 적용"
+      ],
+      "request_started_at_utc": "2026-11-06T06:39:17.744Z",
+      "http_status": 200,
+      "request_duration_ms": 355.094,
+      "n8n_execution_id": null,
+      "evaluation_status": "scored_positive",
+      "error_kind": null,
+      "hit_at_3": true,
+      "staff_doc_leak": false,
+      "staff_body_leak": false,
+      "unapproved_doc_leak": false,
+      "external_reference_leak": false,
+      "retrieved_any": true,
+      "top3": [
+        {
+          "doc": "venue-faq",
+          "section": "5. 공연별 상세 안내 우선 적용",
+          "score": 0.522,
+          "text": "# venue-faq\n## 5. 공연별 상세 안내 우선 적용\n- 티켓모아 아트홀의 주차 및 좌석 안내는 위 시설 정보를 따른다. 개별 공연 안내에서 별도로 공지된 사항은 현장 담당자에게 확인한다.\n- 관람 연령·할인·반입 금지 품목·커튼콜 촬영·현장 발권 시간은 공연별로 달라질 수 있다. 현재 FAQ와 공연별 상세 안내가 다르면 최신 공연별 공지를 확인하도록 안내한다.\n- 할인 적용에는 대상자 확인을 위한 증빙이 필요할 수 있다. 현장 증빙 자료의 종류와 동반인 적용 범위는 해당 공연 안내를 우선한다.\n- 휠체어석과 이동 편의시설의 실제 가용 여부를 확인하지 못하면 좌석 배정이나 이용 가능성을 확약하지 않고 공연장 담당자에게 이관한다.",
+          "access_level": null
+        },
+        {
+          "doc": "refund-policy",
+          "section": "5. 공연별 규정과 환불 금액 확인",
+          "score": 0.47,
+          "text": "# refund-policy\n## 5. 공연별 규정과 환불 금액 확인\n- 티켓모아의 기본 취소 수수료는 위 표에 따른다. 해당 공연에 별도 취소 규정이 공지된 경우, 적용 여부를 확인한 뒤 안내한다.\n- 환불 예정 금액은 확인된 예매 내역과 적용 가능한 취소 규정에 따라 계산한다. 공연별 예외 규정의 적용 여부가 확인되지 않으면 상담원에게 연결한다.\n- 취소 수수료, 예매 수수료, 부가 배송료는 서로 다른 항목이다. 예매 건에 실제로 존재하는 비용만 계산하며, 부가 수수료나 할인 조건이 조회되지 않으면 환불 예정액을 확정하지 않고 상담원에게 이관한다.\n- 예매번호만으로 타인 예약의 환불 금액을 노출하지 않는다. 본인 예매 조회가 확인된 건에 대해서만 금액을 안내한다.\n- 일부 좌석의 부분 취소를 요청할 수 있다. 해당 예매의 취소 가능 상태를 확인한 후 안내한다.",
+          "access_level": null
+        },
+        {
+          "doc": "onsite-entry-fallback",
+          "section": "2. 방법 1: 현장 발권 창구",
+          "score": 0.444,
+          "text": "# onsite-entry-fallback\n## 2. 방법 1: 현장 발권 창구\n1. 공연장 1층 **현장 발권 창구**로 간다 (공연 시작 1시간 전부터 공연 시작 후 20분까지 운영).\n2. **예매번호**와 예매자 본인의 **신분증**을 보여 준다.\n3. 종이 티켓을 받아 바로 입장한다. 종이 티켓을 받으면 같은 예매의 모바일티켓은 자동으로 사용 처리된다.",
+          "access_level": null
+        }
+      ],
+      "api_top_score": 0.522,
+      "indexed": true,
+      "staff_indexed": null,
+      "api_error_code": null
+    }
+  ],
+  "interpretation": {
+    "comparison_warning": "기존 27/28, 수정된 30/30, Python A/B 30/30은 질문 세트·정답 조건·환경이 달라 직접 비교하지 않는다.",
+    "no_ground_answer_safety_assessed": false,
+    "no_external_generated_answer_safety_assessed": false
+  }
+}
